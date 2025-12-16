@@ -73,7 +73,7 @@ export function BottomNavigation({
       {/* Quick Add Menu - Above bottom navigation, arc centered on + button */}
       <AnimatePresence>
         {isMenuOpen && (
-          <div className="fixed bottom-20 inset-x-0 z-50 flex justify-center">
+          <div className="fixed bottom-36 inset-x-0 z-50 flex justify-center">
             <div className="relative w-0 h-0">
               {quickAddItems.map((item, index) => {
                 const totalItems = quickAddItems.length;

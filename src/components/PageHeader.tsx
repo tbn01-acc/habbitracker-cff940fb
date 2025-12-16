@@ -12,7 +12,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ showTitle = false, icon, iconBgClass, title, subtitle }: PageHeaderProps) {
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -22,19 +22,8 @@ export function PageHeader({ showTitle = false, icon, iconBgClass, title, subtit
     return t('goodEvening');
   };
 
-  const getLocale = () => {
-    switch (language) {
-      case 'en': return 'en-US';
-      case 'es': return 'es-ES';
-      default: return 'ru-RU';
-    }
-  };
-
-  const dateString = new Date().toLocaleDateString(getLocale(), { 
-    weekday: 'long', 
-    day: 'numeric', 
-    month: 'long' 
-  });
+  // TODO: Replace with actual user name from auth
+  const userName = t('guest');
 
   return (
     <div className="mb-6">
@@ -47,10 +36,9 @@ export function PageHeader({ showTitle = false, icon, iconBgClass, title, subtit
         </div>
       </div>
 
-      {/* Greeting and Date */}
+      {/* Greeting with User Name */}
       <div className="mb-4">
-        <p className="text-lg font-medium text-foreground">{getGreeting()}</p>
-        <p className="text-sm text-muted-foreground capitalize">{dateString}</p>
+        <p className="text-lg font-medium text-foreground">{getGreeting()}, {userName}</p>
       </div>
 
       {/* Optional Page Title with Icon */}
