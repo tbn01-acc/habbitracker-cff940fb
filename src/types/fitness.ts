@@ -4,19 +4,37 @@ export interface FitnessCategory {
   color: string;
 }
 
+export interface ExerciseCategory {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface FitnessTag {
   id: string;
   name: string;
   color: string;
 }
 
+export type ExerciseStatus = 'not_started' | 'in_progress' | 'completed';
+
+export interface ExerciseSet {
+  setNumber: number;
+  reps: number;
+  weight?: number; // kg or machine setting
+  completed: boolean;
+}
+
 export interface Exercise {
   id: string;
   name: string;
-  sets?: number;
-  reps?: number;
+  categoryId?: string;
+  sets: ExerciseSet[];
+  targetSets: number;
+  targetReps: number;
   duration?: number; // in minutes
-  completed: boolean;
+  status: ExerciseStatus;
+  completedAt?: string;
 }
 
 export interface Workout {
@@ -35,6 +53,19 @@ export interface WorkoutCompletion {
   workoutId: string;
   date: string;
   completedExercises: string[]; // exercise IDs
+  exerciseSets: Record<string, ExerciseSet[]>; // exerciseId -> sets performed
+}
+
+export interface ExerciseLog {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  workoutId: string;
+  workoutName: string;
+  date: string;
+  sets: ExerciseSet[];
+  status: ExerciseStatus;
+  categoryId?: string;
 }
 
 export const WORKOUT_ICONS = [
@@ -58,6 +89,15 @@ export const DEFAULT_FITNESS_CATEGORIES: FitnessCategory[] = [
   { id: 'cardio', name: 'Кардио', color: 'hsl(0, 70%, 55%)' },
   { id: 'flexibility', name: 'Гибкость', color: 'hsl(168, 80%, 40%)' },
   { id: 'sports', name: 'Спорт', color: 'hsl(35, 95%, 55%)' },
+];
+
+export const DEFAULT_EXERCISE_CATEGORIES: ExerciseCategory[] = [
+  { id: 'chest', name: 'Грудь', color: 'hsl(262, 80%, 55%)' },
+  { id: 'back', name: 'Спина', color: 'hsl(200, 80%, 50%)' },
+  { id: 'legs', name: 'Ноги', color: 'hsl(145, 70%, 45%)' },
+  { id: 'shoulders', name: 'Плечи', color: 'hsl(35, 95%, 55%)' },
+  { id: 'arms', name: 'Руки', color: 'hsl(340, 80%, 55%)' },
+  { id: 'core', name: 'Пресс', color: 'hsl(0, 70%, 55%)' },
 ];
 
 export const DEFAULT_FITNESS_TAGS: FitnessTag[] = [

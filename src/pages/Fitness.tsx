@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Sparkles, Dumbbell, Settings } from 'lucide-react';
+import { Plus, Sparkles, Dumbbell, Settings, BarChart3, List } from 'lucide-react';
 import { useFitness } from '@/hooks/useFitness';
 import { Workout, WORKOUT_COLORS } from '@/types/fitness';
 import { WorkoutCard } from '@/components/WorkoutCard';
 import { WorkoutDialog } from '@/components/WorkoutDialog';
+import { FitnessAnalytics } from '@/components/FitnessAnalytics';
 import { PageHeader } from '@/components/PageHeader';
 import { GenericSettingsDialog } from '@/components/GenericSettingsDialog';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { Period } from '@/components/PeriodSelector';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,19 +28,28 @@ interface FitnessProps {
   onDialogClose?: () => void;
 }
 
+type FitnessView = 'workouts' | 'analytics';
+type FilterStatus = 'all' | 'not_started' | 'in_progress' | 'completed';
+
 export default function Fitness({ openDialog, onDialogClose }: FitnessProps) {
   const { 
-    workouts, categories, tags, isLoading, 
+    workouts, categories, exerciseCategories, tags, isLoading, 
     addWorkout, updateWorkout, deleteWorkout, toggleExerciseCompletion, getTodayWorkouts,
     addCategory, updateCategory, deleteCategory,
+    addExerciseCategory, updateExerciseCategory, deleteExerciseCategory,
     addTag, updateTag, deleteTag
   } = useFitness();
+  
   const [dialogOpen, setDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
   const [deleteConfirmWorkout, setDeleteConfirmWorkout] = useState<Workout | null>(null);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [currentView, setCurrentView] = useState<FitnessView>('workouts');
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<Period>('7');
+  const [showDetailedTracking, setShowDetailedTracking] = useState(true);
   const { t } = useTranslation();
 
   const handleSaveWorkout = (workoutData: Omit<Workout, 'id' | 'createdAt'>) => {
@@ -75,7 +86,7 @@ export default function Fitness({ openDialog, onDialogClose }: FitnessProps) {
     return true;
   });
 
-  const hasFilters = filterCategory || filterTag;
+  const hasFilters = filterCategory || filterTag || filterStatus !== 'all';
 
   const todayWorkouts = getTodayWorkouts().filter(w => {
     if (filterCategory && w.categoryId !== filterCategory) return false;
@@ -116,121 +127,163 @@ export default function Fitness({ openDialog, onDialogClose }: FitnessProps) {
           }
         />
 
-        {/* Today's workouts info */}
-        {todayWorkouts.length > 0 && (
-          <div className="bg-fitness/10 rounded-2xl p-4 mb-6 border border-fitness/20">
-            <p className="text-sm text-fitness font-medium mb-1">{t('today')}</p>
-            <p className="text-foreground">{todayWorkouts.map(w => w.name).join(', ')}</p>
-          </div>
-        )}
-
-        {/* Category/Tag Filters */}
-        {(categories.length > 0 || tags.length > 0) && (
-          <div className="mb-4 space-y-2">
-            {categories.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilterCategory(null)}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-xs font-medium transition-all",
-                    !filterCategory ? "bg-fitness text-white" : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {t('uncategorized')}
-                </button>
-                {categories.map(cat => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setFilterCategory(filterCategory === cat.id ? null : cat.id)}
-                    className={cn(
-                      "px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1",
-                      filterCategory === cat.id ? "text-white" : "bg-muted text-muted-foreground"
-                    )}
-                    style={filterCategory === cat.id ? { backgroundColor: cat.color } : undefined}
-                  >
-                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
-                    {cat.name}
-                  </button>
-                ))}
-              </div>
+        {/* View Tabs */}
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setCurrentView('workouts')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all",
+              currentView === 'workouts'
+                ? "bg-fitness text-white"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             )}
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {tags.map(tag => (
-                  <button
-                    key={tag.id}
-                    onClick={() => setFilterTag(filterTag === tag.id ? null : tag.id)}
-                    className={cn(
-                      "px-2 py-0.5 rounded text-xs font-medium transition-all flex items-center gap-1",
-                      filterTag === tag.id ? "text-white" : "bg-muted/50 text-muted-foreground"
-                    )}
-                    style={filterTag === tag.id ? { backgroundColor: tag.color } : undefined}
-                  >
-                    #{tag.name}
-                  </button>
-                ))}
-              </div>
+          >
+            <List className="w-4 h-4" />
+            {t('workout')}
+          </button>
+          <button
+            onClick={() => setCurrentView('analytics')}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all",
+              currentView === 'analytics'
+                ? "bg-fitness text-white"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
             )}
-            {hasFilters && (
-              <button
-                onClick={() => { setFilterCategory(null); setFilterTag(null); }}
-                className="text-xs text-muted-foreground hover:text-foreground"
-              >
-                {t('clearFilters')}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Content */}
-        <div className="mt-6">
-          <AnimatePresence mode="popLayout">
-            {filteredWorkouts.length === 0 ? (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center py-12"
-              >
-                <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-fitness/20 to-fitness/10 flex items-center justify-center">
-                  <Dumbbell className="w-10 h-10 text-fitness" />
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">
-                  {hasFilters ? t('noHabitsToShow') : t('startFitness')}
-                </h3>
-                <p className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto">
-                  {hasFilters ? t('clearFilters') : t('createFirstWorkout')}
-                </p>
-                {!hasFilters && (
-                  <Button 
-                    onClick={() => setDialogOpen(true)}
-                    className="bg-fitness text-white hover:bg-fitness/90"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {t('createWorkout')}
-                  </Button>
-                )}
-              </motion.div>
-            ) : (
-              <div className="space-y-3">
-                {filteredWorkouts.map((workout, index) => (
-                  <WorkoutCard
-                    key={workout.id}
-                    workout={workout}
-                    index={index}
-                    isToday={todayWorkouts.some(w => w.id === workout.id)}
-                    onToggleExercise={(exerciseId) => toggleExerciseCompletion(workout.id, exerciseId, today)}
-                    onEdit={() => handleEditWorkout(workout)}
-                    onDelete={() => handleDeleteWorkout(workout)}
-                  />
-                ))}
-              </div>
-            )}
-          </AnimatePresence>
+          >
+            <BarChart3 className="w-4 h-4" />
+            {t('progress')}
+          </button>
         </div>
+
+        {/* Analytics View */}
+        {currentView === 'analytics' && (
+          <FitnessAnalytics 
+            period={analyticsPeriod} 
+            onPeriodChange={setAnalyticsPeriod} 
+          />
+        )}
+
+        {/* Workouts View */}
+        {currentView === 'workouts' && (
+          <>
+            {/* Today's workouts info */}
+            {todayWorkouts.length > 0 && (
+              <div className="bg-fitness/10 rounded-2xl p-4 mb-6 border border-fitness/20">
+                <p className="text-sm text-fitness font-medium mb-1">{t('today')}</p>
+                <p className="text-foreground">{todayWorkouts.map(w => w.name).join(', ')}</p>
+              </div>
+            )}
+
+            {/* Category/Tag Filters */}
+            {(categories.length > 0 || tags.length > 0) && (
+              <div className="mb-4 space-y-2">
+                {categories.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setFilterCategory(null)}
+                      className={cn(
+                        "px-3 py-1 rounded-full text-xs font-medium transition-all",
+                        !filterCategory ? "bg-fitness text-white" : "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {t('uncategorized')}
+                    </button>
+                    {categories.map(cat => (
+                      <button
+                        key={cat.id}
+                        onClick={() => setFilterCategory(filterCategory === cat.id ? null : cat.id)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1",
+                          filterCategory === cat.id ? "text-white" : "bg-muted text-muted-foreground"
+                        )}
+                        style={filterCategory === cat.id ? { backgroundColor: cat.color } : undefined}
+                      >
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                        {cat.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {tags.map(tag => (
+                      <button
+                        key={tag.id}
+                        onClick={() => setFilterTag(filterTag === tag.id ? null : tag.id)}
+                        className={cn(
+                          "px-2 py-0.5 rounded text-xs font-medium transition-all flex items-center gap-1",
+                          filterTag === tag.id ? "text-white" : "bg-muted/50 text-muted-foreground"
+                        )}
+                        style={filterTag === tag.id ? { backgroundColor: tag.color } : undefined}
+                      >
+                        #{tag.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {hasFilters && (
+                  <button
+                    onClick={() => { setFilterCategory(null); setFilterTag(null); setFilterStatus('all'); }}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    {t('clearFilters')}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="mt-6">
+              <AnimatePresence mode="popLayout">
+                {filteredWorkouts.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-center py-12"
+                  >
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-fitness/20 to-fitness/10 flex items-center justify-center">
+                      <Dumbbell className="w-10 h-10 text-fitness" />
+                    </div>
+                    <h3 className="text-lg font-medium text-foreground mb-2">
+                      {hasFilters ? t('noHabitsToShow') : t('startFitness')}
+                    </h3>
+                    <p className="text-muted-foreground text-sm mb-6 max-w-xs mx-auto">
+                      {hasFilters ? t('clearFilters') : t('createFirstWorkout')}
+                    </p>
+                    {!hasFilters && (
+                      <Button 
+                        onClick={() => setDialogOpen(true)}
+                        className="bg-fitness text-white hover:bg-fitness/90"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        {t('createWorkout')}
+                      </Button>
+                    )}
+                  </motion.div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredWorkouts.map((workout, index) => (
+                      <WorkoutCard
+                        key={workout.id}
+                        workout={workout}
+                        index={index}
+                        isToday={todayWorkouts.some(w => w.id === workout.id)}
+                        onToggleExercise={(exerciseId) => toggleExerciseCompletion(workout.id, exerciseId, today)}
+                        onEdit={() => handleEditWorkout(workout)}
+                        onDelete={() => handleDeleteWorkout(workout)}
+                        showDetailedTracking={showDetailedTracking}
+                      />
+                    ))}
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+          </>
+        )}
       </div>
 
       {/* FAB */}
-      {workouts.length > 0 && (
+      {currentView === 'workouts' && workouts.length > 0 && (
         <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
@@ -262,6 +315,7 @@ export default function Fitness({ openDialog, onDialogClose }: FitnessProps) {
         workout={editingWorkout}
         categories={categories}
         tags={tags}
+        exerciseCategories={exerciseCategories}
       />
 
       <GenericSettingsDialog

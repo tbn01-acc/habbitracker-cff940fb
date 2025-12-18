@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, Trash2 } from 'lucide-react';
-import { Workout, Exercise, WORKOUT_ICONS, WORKOUT_COLORS, FitnessCategory, FitnessTag } from '@/types/fitness';
+import { Workout, Exercise, ExerciseSet, WORKOUT_ICONS, WORKOUT_COLORS, FitnessCategory, FitnessTag, ExerciseCategory } from '@/types/fitness';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/contexts/LanguageContext';
@@ -14,6 +14,7 @@ interface WorkoutDialogProps {
   workout?: Workout | null;
   categories: FitnessCategory[];
   tags: FitnessTag[];
+  exerciseCategories?: ExerciseCategory[];
 }
 
 const WEEKDAYS = [
@@ -26,12 +27,21 @@ const WEEKDAYS = [
   { id: 6, short: 'Сб' },
 ];
 
-export function WorkoutDialog({ open, onClose, onSave, workout, categories, tags }: WorkoutDialogProps) {
+interface ExerciseInput {
+  id: string;
+  name: string;
+  targetSets: number;
+  targetReps: number;
+  duration?: number;
+  categoryId?: string;
+}
+
+export function WorkoutDialog({ open, onClose, onSave, workout, categories, tags, exerciseCategories = [] }: WorkoutDialogProps) {
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(WORKOUT_ICONS[0]);
   const [color, setColor] = useState(WORKOUT_COLORS[0]);
   const [scheduledDays, setScheduledDays] = useState<number[]>([1, 3, 5]);
-  const [exercises, setExercises] = useState<Omit<Exercise, 'completed'>[]>([]);
+  const [exercises, setExercises] = useState<ExerciseInput[]>([]);
   const [newExerciseName, setNewExerciseName] = useState('');
   const [categoryId, setCategoryId] = useState<string | undefined>();
   const [tagIds, setTagIds] = useState<string[]>([]);
@@ -46,9 +56,10 @@ export function WorkoutDialog({ open, onClose, onSave, workout, categories, tags
       setExercises(workout.exercises.map(e => ({ 
         id: e.id, 
         name: e.name, 
-        sets: e.sets, 
-        reps: e.reps, 
-        duration: e.duration 
+        targetSets: e.targetSets || 3, 
+        targetReps: e.targetReps || 10, 
+        duration: e.duration,
+        categoryId: e.categoryId,
       })));
       setCategoryId(workout.categoryId);
       setTagIds(workout.tagIds || []);
@@ -66,12 +77,24 @@ export function WorkoutDialog({ open, onClose, onSave, workout, categories, tags
 
   const handleSave = () => {
     if (!name.trim() || exercises.length === 0) return;
+    
+    const exercisesWithDefaults: Exercise[] = exercises.map(e => ({
+      id: e.id,
+      name: e.name,
+      targetSets: e.targetSets,
+      targetReps: e.targetReps,
+      duration: e.duration,
+      categoryId: e.categoryId,
+      sets: [],
+      status: 'not_started' as const,
+    }));
+    
     onSave({ 
       name: name.trim(), 
       icon, 
       color, 
       scheduledDays,
-      exercises: exercises.map(e => ({ ...e, completed: false })),
+      exercises: exercisesWithDefaults,
       categoryId,
       tagIds,
     });
@@ -90,7 +113,7 @@ export function WorkoutDialog({ open, onClose, onSave, workout, categories, tags
     if (!newExerciseName.trim()) return;
     setExercises([
       ...exercises,
-      { id: crypto.randomUUID(), name: newExerciseName.trim(), sets: 3, reps: 10 }
+      { id: crypto.randomUUID(), name: newExerciseName.trim(), targetSets: 3, targetReps: 10 }
     ]);
     setNewExerciseName('');
   };
@@ -99,7 +122,7 @@ export function WorkoutDialog({ open, onClose, onSave, workout, categories, tags
     setExercises(exercises.filter(e => e.id !== id));
   };
 
-  const updateExercise = (id: string, updates: Partial<Exercise>) => {
+  const updateExercise = (id: string, updates: Partial<ExerciseInput>) => {
     setExercises(exercises.map(e => e.id === id ? { ...e, ...updates } : e));
   };
 
@@ -298,15 +321,15 @@ export function WorkoutDialog({ open, onClose, onSave, workout, categories, tags
                       <span className="flex-1 text-sm truncate">{exercise.name}</span>
                       <Input
                         type="number"
-                        value={exercise.sets || ''}
-                        onChange={(e) => updateExercise(exercise.id, { sets: parseInt(e.target.value) || undefined })}
+                        value={exercise.targetSets || ''}
+                        onChange={(e) => updateExercise(exercise.id, { targetSets: parseInt(e.target.value) || 3 })}
                         placeholder="×"
                         className="w-12 h-8 text-xs bg-background"
                       />
                       <Input
                         type="number"
-                        value={exercise.reps || ''}
-                        onChange={(e) => updateExercise(exercise.id, { reps: parseInt(e.target.value) || undefined })}
+                        value={exercise.targetReps || ''}
+                        onChange={(e) => updateExercise(exercise.id, { targetReps: parseInt(e.target.value) || 10 })}
                         placeholder="повт"
                         className="w-14 h-8 text-xs bg-background"
                       />

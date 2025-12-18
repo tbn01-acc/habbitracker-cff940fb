@@ -247,6 +247,18 @@ export const translations = {
     workoutsCount: 'тренировок',
     deleteWorkout: 'Удалить тренировку?',
     deleteWorkoutDescription: 'Тренировка будет удалена. Это действие нельзя отменить.',
+    exerciseCompleted: 'Упражнение выполнено',
+    notStarted: 'Не начато',
+    inProgress: 'В процессе',
+    exercisesCount: 'Упражнений',
+    total: 'всего',
+    totalSets: 'Всего подходов',
+    setsCompleted: 'выполнено',
+    dailyActivity: 'Активность по дням',
+    exerciseCategories: 'Категории упражнений',
+    weight: 'Вес (кг)',
+    targetSets: 'Цель подходов',
+    targetReps: 'Цель повторений',
 
     // Auth
     signIn: 'Войти',

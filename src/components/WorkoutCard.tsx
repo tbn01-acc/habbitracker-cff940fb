@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, MoreVertical, Pencil, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
-import { Workout } from '@/types/fitness';
+import { Workout, ExerciseSet } from '@/types/fitness';
 import { useFitness } from '@/hooks/useFitness';
 import { useTranslation } from '@/contexts/LanguageContext';
+import { ExerciseSetTracker } from '@/components/ExerciseSetTracker';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenu,
@@ -19,15 +20,28 @@ interface WorkoutCardProps {
   onToggleExercise: (exerciseId: string) => void;
   onEdit: () => void;
   onDelete: () => void;
+  showDetailedTracking?: boolean;
 }
 
 const WEEKDAYS_SHORT = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
 
-export function WorkoutCard({ workout, index, isToday, onToggleExercise, onEdit, onDelete }: WorkoutCardProps) {
+export function WorkoutCard({ 
+  workout, 
+  index, 
+  isToday, 
+  onToggleExercise, 
+  onEdit, 
+  onDelete,
+  showDetailedTracking = false 
+}: WorkoutCardProps) {
   const [isExpanded, setIsExpanded] = useState(isToday);
   const { t } = useTranslation();
-  const { isExerciseCompleted } = useFitness();
+  const { isExerciseCompleted, getExerciseSets, logExerciseSet } = useFitness();
   const today = new Date().toISOString().split('T')[0];
+
+  const handleLogSet = (exerciseId: string, setData: ExerciseSet) => {
+    logExerciseSet(workout.id, exerciseId, today, setData);
+  };
 
   return (
     <motion.div
@@ -94,9 +108,27 @@ export function WorkoutCard({ workout, index, isToday, onToggleExercise, onEdit,
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 space-y-2">
+            <div className="px-4 pb-4 space-y-3">
               {workout.exercises.map((exercise) => {
                 const completed = isExerciseCompleted(workout.id, exercise.id, today);
+                const performedSets = getExerciseSets(workout.id, exercise.id, today);
+                
+                // Show detailed tracking with sets if enabled and it's today
+                if (showDetailedTracking && isToday) {
+                  return (
+                    <ExerciseSetTracker
+                      key={exercise.id}
+                      exerciseId={exercise.id}
+                      exerciseName={exercise.name}
+                      targetSets={exercise.targetSets}
+                      targetReps={exercise.targetReps}
+                      performedSets={performedSets}
+                      onLogSet={(setData) => handleLogSet(exercise.id, setData)}
+                    />
+                  );
+                }
+                
+                // Simple toggle mode
                 return (
                   <button
                     key={exercise.id}
@@ -130,9 +162,9 @@ export function WorkoutCard({ workout, index, isToday, onToggleExercise, onEdit,
                       {exercise.name}
                     </span>
 
-                    {exercise.sets && exercise.reps && (
+                    {exercise.targetSets && exercise.targetReps && (
                       <span className="text-xs text-muted-foreground">
-                        {exercise.sets}×{exercise.reps}
+                        {exercise.targetSets}×{exercise.targetReps}
                       </span>
                     )}
                     {exercise.duration && (
