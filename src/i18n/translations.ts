@@ -435,6 +435,14 @@ export const translations = {
     timeByTask: 'Время по задачам',
     totalTimeSpent: 'Всего затрачено',
     noTimeData: 'Нет данных о времени',
+    
+    // Dashboard widgets
+    widgetSettings: 'Настройки виджетов',
+    quickAccess: 'Быстрый доступ',
+    allServices: 'Все сервисы',
+    avgPerDay: 'В среднем/день',
+    topTask: 'Топ задача',
+    pause: 'Пауза',
   },
   en: {
     // Greetings
@@ -870,6 +878,14 @@ export const translations = {
     timeByTask: 'Time by task',
     totalTimeSpent: 'Total time spent',
     noTimeData: 'No time data',
+    
+    // Dashboard widgets
+    widgetSettings: 'Widget Settings',
+    quickAccess: 'Quick Access',
+    allServices: 'All Services',
+    avgPerDay: 'Avg/day',
+    topTask: 'Top task',
+    pause: 'Pause',
   },
   es: {
     // Greetings
@@ -1305,6 +1321,14 @@ export const translations = {
     timeByTask: 'Tiempo por tarea',
     totalTimeSpent: 'Tiempo total',
     noTimeData: 'Sin datos de tiempo',
+    
+    // Dashboard widgets
+    widgetSettings: 'Configuración de widgets',
+    quickAccess: 'Acceso rápido',
+    allServices: 'Todos los servicios',
+    avgPerDay: 'Prom/día',
+    topTask: 'Tarea principal',
+    pause: 'Pausa',
   },
 } as const;
 

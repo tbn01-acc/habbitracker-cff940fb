@@ -10,15 +10,22 @@ import { TodoSection } from '@/components/dashboard/TodoSection';
 import { PageHeader } from '@/components/PageHeader';
 import { DayQualityRing } from '@/components/dashboard/DayQualityRing';
 import { useWeather, getWeatherIcon } from '@/hooks/useWeather';
+import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
+import { PomodoroWidget } from '@/components/dashboard/PomodoroWidget';
+import { TimeStatsWidget } from '@/components/dashboard/TimeStatsWidget';
+import { QuickServicesWidget } from '@/components/dashboard/QuickServicesWidget';
+import { WidgetSettings } from '@/components/dashboard/WidgetSettings';
 
 export default function Dashboard() {
   const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [isWidgetsExpanded, setIsWidgetsExpanded] = useState(true);
   const { habits, toggleHabitCompletion } = useHabits();
   const { tasks, toggleTaskCompletion, getTodayTasks } = useTasks();
   const { transactions, toggleTransactionCompletion, getTodayTransactions } = useFinance();
   const { t, language } = useTranslation();
   const { weather, loading: weatherLoading } = useWeather();
+  const { getEnabledWidgets } = useDashboardWidgets();
 
   const today = getTodayString();
   const dayOfWeek = new Date().getDay();
@@ -51,6 +58,21 @@ export default function Dashboard() {
     habits: 'hsl(var(--habit))',
     tasks: 'hsl(var(--task))',
     finance: 'hsl(var(--finance))',
+  };
+
+  const enabledWidgets = getEnabledWidgets();
+
+  const renderWidget = (widgetType: string) => {
+    switch (widgetType) {
+      case 'pomodoro':
+        return <PomodoroWidget key="pomodoro" />;
+      case 'time_stats':
+        return <TimeStatsWidget key="time_stats" />;
+      case 'quick_services':
+        return <QuickServicesWidget key="quick_services" />;
+      default:
+        return null;
+    }
   };
 
   const isLoading = false;
@@ -86,6 +108,41 @@ export default function Dashboard() {
           </div>
           <DayQualityRing value={dayQuality} />
         </div>
+
+        {/* Widgets Section */}
+        {enabledWidgets.length > 0 && (
+          <div className="mb-6">
+            <button 
+              onClick={() => setIsWidgetsExpanded(!isWidgetsExpanded)}
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3 hover:text-foreground transition-colors w-full justify-between"
+            >
+              <div className="flex items-center gap-2">
+                {t('services')}:
+                {isWidgetsExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </div>
+              <WidgetSettings />
+            </button>
+            <AnimatePresence initial={false}>
+              {isWidgetsExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {enabledWidgets.map(widget => renderWidget(widget.type))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
         {/* Section: Выполнено (Collapsible) */}
         <div className="mb-6">
