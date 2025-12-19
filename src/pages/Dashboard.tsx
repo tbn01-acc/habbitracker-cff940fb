@@ -1,20 +1,20 @@
-import { useState } from 'react';
-import { Target, CheckSquare, Wallet, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useHabits, getTodayString } from '@/hooks/useHabits';
-import { useTasks } from '@/hooks/useTasks';
-import { useFinance } from '@/hooks/useFinance';
-import { useTranslation } from '@/contexts/LanguageContext';
-import { ProgressBar } from '@/components/dashboard/ProgressBar';
-import { TodoSection } from '@/components/dashboard/TodoSection';
-import { PageHeader } from '@/components/PageHeader';
-import { DayQualityRing } from '@/components/dashboard/DayQualityRing';
-import { useWeather, getWeatherIcon } from '@/hooks/useWeather';
-import { useDashboardWidgets } from '@/hooks/useDashboardWidgets';
-import { PomodoroWidget } from '@/components/dashboard/PomodoroWidget';
-import { TimeStatsWidget } from '@/components/dashboard/TimeStatsWidget';
-import { QuickServicesWidget } from '@/components/dashboard/QuickServicesWidget';
-import { WidgetSettings } from '@/components/dashboard/WidgetSettings';
+import { useState } from "react";
+import { Target, CheckSquare, Wallet, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useHabits, getTodayString } from "@/hooks/useHabits";
+import { useTasks } from "@/hooks/useTasks";
+import { useFinance } from "@/hooks/useFinance";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { ProgressBar } from "@/components/dashboard/ProgressBar";
+import { TodoSection } from "@/components/dashboard/TodoSection";
+import { PageHeader } from "@/components/PageHeader";
+import { DayQualityRing } from "@/components/dashboard/DayQualityRing";
+import { useWeather, getWeatherIcon } from "@/hooks/useWeather";
+import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
+import { PomodoroWidget } from "@/components/dashboard/PomodoroWidget";
+import { TimeStatsWidget } from "@/components/dashboard/TimeStatsWidget";
+import { QuickServicesWidget } from "@/components/dashboard/QuickServicesWidget";
+import { WidgetSettings } from "@/components/dashboard/WidgetSettings";
 
 export default function Dashboard() {
   const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
@@ -31,16 +31,16 @@ export default function Dashboard() {
   const dayOfWeek = new Date().getDay();
 
   // Habits for today
-  const todayHabits = habits.filter(h => h.targetDays.includes(dayOfWeek));
-  const completedHabits = todayHabits.filter(h => h.completedDates.includes(today));
+  const todayHabits = habits.filter((h) => h.targetDays.includes(dayOfWeek));
+  const completedHabits = todayHabits.filter((h) => h.completedDates.includes(today));
 
   // Tasks for today
   const todayTasks = getTodayTasks();
-  const completedTasks = todayTasks.filter(t => t.completed);
+  const completedTasks = todayTasks.filter((t) => t.completed);
 
   // Transactions for today
   const todayTransactions = getTodayTransactions();
-  const completedTransactions = todayTransactions.filter(t => t.completed);
+  const completedTransactions = todayTransactions.filter((t) => t.completed);
 
   // Calculate Day Quality (0-100)
   const totalItems = todayHabits.length + todayTasks.length + todayTransactions.length;
@@ -49,24 +49,24 @@ export default function Dashboard() {
 
   // Format date
   const formattedDate = new Date().toLocaleDateString(
-    language === 'ru' ? 'ru-RU' : language === 'es' ? 'es-ES' : 'en-US',
-    { day: 'numeric', month: 'long', weekday: 'long' }
+    language === "ru" ? "ru-RU" : language === "es" ? "es-ES" : "en-US",
+    { day: "numeric", month: "long", weekday: "long" },
   );
 
   // Colors for modules
   const colors = {
-    habits: 'hsl(var(--habit))',
-    tasks: 'hsl(var(--task))',
-    finance: 'hsl(var(--finance))',
+    habits: "hsl(var(--habit))",
+    tasks: "hsl(var(--task))",
+    finance: "hsl(var(--finance))",
   };
 
   const enabledWidgets = getEnabledWidgets();
 
   const renderWidget = (widgetType: string) => {
     switch (widgetType) {
-      case 'pomodoro':
+      case "pomodoro":
         return <PomodoroWidget key="pomodoro" />;
-      case 'time_stats':
+      case "time_stats":
         return <TimeStatsWidget key="time_stats" />;
       default:
         return null;
@@ -94,12 +94,13 @@ export default function Dashboard() {
         {/* Section: Сегодня with Day Quality Ring */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{t('today')}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t("today")}</h1>
             <div className="flex items-center gap-2">
               <p className="text-sm text-muted-foreground capitalize">{formattedDate}</p>
               {!weatherLoading && weather && (
                 <span className="text-sm text-muted-foreground">
-                  {getWeatherIcon(weather.weatherCode, weather.isDay)}{weather.temperature}°
+                  {getWeatherIcon(weather.weatherCode, weather.isDay)}
+                  {weather.temperature}°
                 </span>
               )}
             </div>
@@ -110,17 +111,13 @@ export default function Dashboard() {
         {/* Widgets Section */}
         {enabledWidgets.length > 0 && (
           <div className="mb-6">
-            <button 
+            <button
               onClick={() => setIsWidgetsExpanded(!isWidgetsExpanded)}
               className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3 hover:text-foreground transition-colors w-full justify-between"
             >
               <div className="flex items-center gap-2">
-                {t('services')}:
-                {isWidgetsExpanded ? (
-                  <ChevronUp className="w-4 h-4" />
-                ) : (
-                  <ChevronDown className="w-4 h-4" />
-                )}
+                {t("services")}:
+                {isWidgetsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </div>
               <WidgetSettings />
             </button>
@@ -128,13 +125,15 @@ export default function Dashboard() {
               {isWidgetsExpanded && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  transition={{ duration: 0.2, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {enabledWidgets.filter(w => w.type !== 'quick_services').map(widget => renderWidget(widget.type))}
+                    {enabledWidgets
+                      .filter((w) => w.type !== "quick_services")
+                      .map((widget) => renderWidget(widget.type))}
                   </div>
                 </motion.div>
               )}
@@ -144,24 +143,20 @@ export default function Dashboard() {
 
         {/* Section: Выполнено (Collapsible) */}
         <div className="mb-6">
-          <button 
+          <button
             onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
             className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3 hover:text-foreground transition-colors"
           >
-            {t('completed')}:
-            {isCompletedExpanded ? (
-              <ChevronUp className="w-4 h-4" />
-            ) : (
-              <ChevronDown className="w-4 h-4" />
-            )}
+            {t("completed")}:
+            {isCompletedExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
-          <AnimatePresence initial={false}>
+          <AnimatePresence initial={true}>
             {isCompletedExpanded && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
+                animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
                 className="overflow-hidden"
               >
                 <div className="bg-card rounded-2xl p-4 shadow-card border border-border">
@@ -169,21 +164,21 @@ export default function Dashboard() {
                     icon={<Target className="w-4 h-4" />}
                     completed={completedHabits.length}
                     total={todayHabits.length}
-                    label={t('habitsLabel')}
+                    label={t("habitsLabel")}
                     color={colors.habits}
                   />
                   <ProgressBar
                     icon={<CheckSquare className="w-4 h-4" />}
                     completed={completedTasks.length}
                     total={todayTasks.length}
-                    label={t('tasksLabel')}
+                    label={t("tasksLabel")}
                     color={colors.tasks}
                   />
                   <ProgressBar
                     icon={<Wallet className="w-4 h-4" />}
                     completed={completedTransactions.length}
                     total={todayTransactions.length}
-                    label={t('operationsLabel')}
+                    label={t("operationsLabel")}
                     color={colors.finance}
                   />
                 </div>
@@ -193,15 +188,15 @@ export default function Dashboard() {
         </div>
 
         {/* Section: Сделать */}
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">{t('toDo')}:</h2>
-        
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("toDo")}:</h2>
+
         <div className="grid grid-cols-3 gap-3">
           <AnimatePresence mode="wait">
             {expandedSection === null && (
               <>
                 <TodoSection
-                  title={t('habits')}
-                  items={todayHabits.map(h => ({
+                  title={t("habits")}
+                  items={todayHabits.map((h) => ({
                     id: h.id,
                     name: h.name,
                     icon: h.icon,
@@ -211,12 +206,12 @@ export default function Dashboard() {
                   icon={<Target className="w-4 h-4" />}
                   onToggle={(id) => toggleHabitCompletion(id, today)}
                   isExpanded={false}
-                  onExpand={() => setExpandedSection('habits')}
+                  onExpand={() => setExpandedSection("habits")}
                 />
-                
+
                 <TodoSection
-                  title={t('tasks')}
-                  items={todayTasks.map(t => ({
+                  title={t("tasks")}
+                  items={todayTasks.map((t) => ({
                     id: t.id,
                     name: t.name,
                     icon: t.icon,
@@ -226,30 +221,30 @@ export default function Dashboard() {
                   icon={<CheckSquare className="w-4 h-4" />}
                   onToggle={toggleTaskCompletion}
                   isExpanded={false}
-                  onExpand={() => setExpandedSection('tasks')}
+                  onExpand={() => setExpandedSection("tasks")}
                 />
-                
+
                 <TodoSection
-                  title={t('finance')}
-                  items={todayTransactions.map(t => ({
+                  title={t("finance")}
+                  items={todayTransactions.map((t) => ({
                     id: t.id,
-                    name: `${t.type === 'income' ? '+' : '-'}${t.amount}₽ ${t.name}`,
+                    name: `${t.type === "income" ? "+" : "-"}${t.amount}₽ ${t.name}`,
                     completed: t.completed,
                   }))}
                   color={colors.finance}
                   icon={<Wallet className="w-4 h-4" />}
                   onToggle={toggleTransactionCompletion}
                   isExpanded={false}
-                  onExpand={() => setExpandedSection('finance')}
+                  onExpand={() => setExpandedSection("finance")}
                 />
               </>
             )}
 
-            {expandedSection === 'habits' && (
+            {expandedSection === "habits" && (
               <TodoSection
                 key="habits-expanded"
-                title={t('habits')}
-                items={todayHabits.map(h => ({
+                title={t("habits")}
+                items={todayHabits.map((h) => ({
                   id: h.id,
                   name: h.name,
                   icon: h.icon,
@@ -260,17 +255,17 @@ export default function Dashboard() {
                 onToggle={(id) => toggleHabitCompletion(id, today)}
                 isExpanded={true}
                 onCollapse={() => setExpandedSection(null)}
-                onSwipeLeft={() => setExpandedSection('tasks')}
+                onSwipeLeft={() => setExpandedSection("tasks")}
                 hasPrev={false}
                 hasNext={true}
               />
             )}
 
-            {expandedSection === 'tasks' && (
+            {expandedSection === "tasks" && (
               <TodoSection
                 key="tasks-expanded"
-                title={t('tasks')}
-                items={todayTasks.map(t => ({
+                title={t("tasks")}
+                items={todayTasks.map((t) => ({
                   id: t.id,
                   name: t.name,
                   icon: t.icon,
@@ -281,20 +276,20 @@ export default function Dashboard() {
                 onToggle={toggleTaskCompletion}
                 isExpanded={true}
                 onCollapse={() => setExpandedSection(null)}
-                onSwipeLeft={() => setExpandedSection('finance')}
-                onSwipeRight={() => setExpandedSection('habits')}
+                onSwipeLeft={() => setExpandedSection("finance")}
+                onSwipeRight={() => setExpandedSection("habits")}
                 hasPrev={true}
                 hasNext={true}
               />
             )}
 
-            {expandedSection === 'finance' && (
+            {expandedSection === "finance" && (
               <TodoSection
                 key="finance-expanded"
-                title={t('finance')}
-                items={todayTransactions.map(t => ({
+                title={t("finance")}
+                items={todayTransactions.map((t) => ({
                   id: t.id,
-                  name: `${t.type === 'income' ? '+' : '-'}${t.amount}₽ ${t.name}`,
+                  name: `${t.type === "income" ? "+" : "-"}${t.amount}₽ ${t.name}`,
                   completed: t.completed,
                 }))}
                 color={colors.finance}
@@ -302,7 +297,7 @@ export default function Dashboard() {
                 onToggle={toggleTransactionCompletion}
                 isExpanded={true}
                 onCollapse={() => setExpandedSection(null)}
-                onSwipeRight={() => setExpandedSection('tasks')}
+                onSwipeRight={() => setExpandedSection("tasks")}
                 hasPrev={true}
                 hasNext={false}
               />
