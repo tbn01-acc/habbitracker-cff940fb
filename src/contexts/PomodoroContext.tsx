@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
 import { 
   PomodoroSettings, 
   PomodoroPhase, 
@@ -8,8 +8,42 @@ import {
 
 const SETTINGS_KEY = 'habitflow_pomodoro_settings';
 const SESSIONS_KEY = 'habitflow_pomodoro_sessions';
+const STATE_KEY = 'habitflow_pomodoro_state';
 
-export function usePomodoro() {
+interface PomodoroState {
+  currentPhase: PomodoroPhase;
+  timeLeft: number;
+  isRunning: boolean;
+  currentTaskId?: string;
+  currentSubtaskId?: string;
+  sessionStart?: string;
+}
+
+interface PomodoroContextType {
+  settings: PomodoroSettings;
+  saveSettings: (settings: PomodoroSettings) => void;
+  currentPhase: PomodoroPhase;
+  timeLeft: number;
+  isRunning: boolean;
+  completedSessions: number;
+  currentTaskId?: string;
+  currentSubtaskId?: string;
+  start: (taskId?: string, subtaskId?: string) => void;
+  pause: () => void;
+  reset: () => void;
+  skip: () => void;
+  setPhase: (phase: PomodoroPhase) => void;
+  requestNotificationPermission: () => Promise<void>;
+  getTodaySessions: () => PomodoroSession[];
+  getTodayPomodoroTime: () => number;
+  getPomodoroTimeByPeriod: (period: 'today' | 'week' | 'month') => number;
+  getPomodoroTimeByTask: (period: 'today' | 'week' | 'month') => Record<string, number>;
+  sessions: PomodoroSession[];
+}
+
+const PomodoroContext = createContext<PomodoroContextType | undefined>(undefined);
+
+export function PomodoroProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<PomodoroSettings>(DEFAULT_POMODORO_SETTINGS);
   const [sessions, setSessions] = useState<PomodoroSession[]>([]);
   const [currentPhase, setCurrentPhase] = useState<PomodoroPhase>('work');
@@ -22,14 +56,13 @@ export function usePomodoro() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const sessionStartRef = useRef<string | null>(null);
 
-  // Load settings and sessions
+  // Load settings, sessions, and state
   useEffect(() => {
     const storedSettings = localStorage.getItem(SETTINGS_KEY);
     if (storedSettings) {
       try {
         const parsed = JSON.parse(storedSettings);
         setSettings(parsed);
-        setTimeLeft(parsed.workDuration * 60);
       } catch (e) {
         console.error('Failed to parse pomodoro settings:', e);
       }
@@ -43,6 +76,81 @@ export function usePomodoro() {
         console.error('Failed to parse pomodoro sessions:', e);
       }
     }
+
+    // Load running state
+    const storedState = localStorage.getItem(STATE_KEY);
+    if (storedState) {
+      try {
+        const state: PomodoroState = JSON.parse(storedState);
+        setCurrentPhase(state.currentPhase);
+        setIsRunning(state.isRunning);
+        setCurrentTaskId(state.currentTaskId);
+        setCurrentSubtaskId(state.currentSubtaskId);
+        
+        if (state.isRunning && state.sessionStart) {
+          sessionStartRef.current = state.sessionStart;
+          // Calculate remaining time based on elapsed time
+          const elapsed = Math.floor((Date.now() - new Date(state.sessionStart).getTime()) / 1000);
+          const phaseDuration = state.currentPhase === 'work' 
+            ? (JSON.parse(storedSettings || '{}').workDuration || 25) * 60
+            : state.currentPhase === 'short_break'
+              ? (JSON.parse(storedSettings || '{}').shortBreakDuration || 5) * 60
+              : (JSON.parse(storedSettings || '{}').longBreakDuration || 15) * 60;
+          const remaining = Math.max(0, phaseDuration - elapsed);
+          setTimeLeft(remaining);
+        } else {
+          setTimeLeft(state.timeLeft);
+        }
+      } catch (e) {
+        console.error('Failed to parse pomodoro state:', e);
+        setTimeLeft(settings.workDuration * 60);
+      }
+    } else {
+      setTimeLeft(settings.workDuration * 60);
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  const saveState = useCallback(() => {
+    const state: PomodoroState = {
+      currentPhase,
+      timeLeft,
+      isRunning,
+      currentTaskId,
+      currentSubtaskId,
+      sessionStart: sessionStartRef.current || undefined,
+    };
+    localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    
+    // Dispatch storage event for other tabs/components
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: STATE_KEY,
+      newValue: JSON.stringify(state),
+    }));
+  }, [currentPhase, timeLeft, isRunning, currentTaskId, currentSubtaskId]);
+
+  // Listen for storage changes from other components
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STATE_KEY && e.newValue) {
+        try {
+          const state: PomodoroState = JSON.parse(e.newValue);
+          setCurrentPhase(state.currentPhase);
+          setTimeLeft(state.timeLeft);
+          setIsRunning(state.isRunning);
+          setCurrentTaskId(state.currentTaskId);
+          setCurrentSubtaskId(state.currentSubtaskId);
+          if (state.sessionStart) {
+            sessionStartRef.current = state.sessionStart;
+          }
+        } catch (e) {
+          console.error('Failed to parse storage event:', e);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const saveSettings = useCallback((newSettings: PomodoroSettings) => {
@@ -68,6 +176,51 @@ export function usePomodoro() {
         return settings.longBreakDuration * 60;
     }
   }, [settings]);
+
+  const playNotificationSound = useCallback(() => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.5);
+      
+      setTimeout(() => {
+        const osc2 = audioContext.createOscillator();
+        const gain2 = audioContext.createGain();
+        osc2.connect(gain2);
+        gain2.connect(audioContext.destination);
+        osc2.frequency.value = 1000;
+        osc2.type = 'sine';
+        gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+        osc2.start(audioContext.currentTime);
+        osc2.stop(audioContext.currentTime + 0.5);
+      }, 300);
+    } catch (e) {
+      console.error('Failed to play notification sound:', e);
+    }
+  }, []);
+
+  const triggerVibration = useCallback(() => {
+    try {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    } catch (e) {
+      console.error('Vibration failed:', e);
+    }
+  }, []);
 
   const completeSession = useCallback(() => {
     if (sessionStartRef.current && currentPhase === 'work') {
@@ -108,7 +261,6 @@ export function usePomodoro() {
     setTimeLeft(getPhaseTime(nextPhaseType));
     setIsRunning(false);
     
-    // Auto-start if enabled
     if (
       (nextPhaseType !== 'work' && settings.autoStartBreaks) ||
       (nextPhaseType === 'work' && settings.autoStartPomodoros)
@@ -116,16 +268,13 @@ export function usePomodoro() {
       setTimeout(() => {
         setIsRunning(true);
         sessionStartRef.current = new Date().toISOString();
+        saveState();
       }, 500);
     }
     
-    // Play notification sound
     playNotificationSound();
-    
-    // Vibrate device
     triggerVibration();
     
-    // Browser notification
     if (Notification.permission === 'granted') {
       new Notification('Pomodoro Timer', {
         body: nextPhaseType === 'work' 
@@ -136,57 +285,7 @@ export function usePomodoro() {
         icon: '/pwa-192x192.png'
       });
     }
-  }, [currentPhase, completedSessions, settings, getPhaseTime, completeSession]);
-
-  // Sound notification
-  const playNotificationSound = useCallback(() => {
-    try {
-      // Create audio context for more reliable sound
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-      
-      oscillator.frequency.value = 800;
-      oscillator.type = 'sine';
-      
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-      
-      oscillator.start(audioContext.currentTime);
-      oscillator.stop(audioContext.currentTime + 0.5);
-      
-      // Play second beep
-      setTimeout(() => {
-        const osc2 = audioContext.createOscillator();
-        const gain2 = audioContext.createGain();
-        osc2.connect(gain2);
-        gain2.connect(audioContext.destination);
-        osc2.frequency.value = 1000;
-        osc2.type = 'sine';
-        gain2.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-        osc2.start(audioContext.currentTime);
-        osc2.stop(audioContext.currentTime + 0.5);
-      }, 300);
-    } catch (e) {
-      console.error('Failed to play notification sound:', e);
-    }
-  }, []);
-
-  // Vibration
-  const triggerVibration = useCallback(() => {
-    try {
-      if ('vibrate' in navigator) {
-        // Pattern: vibrate 200ms, pause 100ms, vibrate 200ms
-        navigator.vibrate([200, 100, 200]);
-      }
-    } catch (e) {
-      console.error('Vibration failed:', e);
-    }
-  }, []);
+  }, [currentPhase, completedSessions, settings, getPhaseTime, completeSession, playNotificationSound, triggerVibration, saveState]);
 
   // Timer tick
   useEffect(() => {
@@ -212,6 +311,11 @@ export function usePomodoro() {
       }
     };
   }, [isRunning, nextPhase]);
+
+  // Save state when running state changes
+  useEffect(() => {
+    saveState();
+  }, [isRunning, currentPhase, currentTaskId, saveState]);
 
   const start = useCallback((taskId?: string, subtaskId?: string) => {
     setCurrentTaskId(taskId);
@@ -252,7 +356,6 @@ export function usePomodoro() {
     return sessions.filter(s => s.startTime.startsWith(today) && s.completed);
   }, [sessions]);
 
-  // Get total pomodoro time for today (in seconds)
   const getTodayPomodoroTime = useCallback(() => {
     const todaySessions = getTodaySessions();
     return todaySessions.reduce((sum, s) => {
@@ -266,7 +369,6 @@ export function usePomodoro() {
     }, 0);
   }, [getTodaySessions]);
 
-  // Get total pomodoro time for a period (in seconds)
   const getPomodoroTimeByPeriod = useCallback((period: 'today' | 'week' | 'month') => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -299,7 +401,6 @@ export function usePomodoro() {
       }, 0);
   }, [sessions]);
 
-  // Get pomodoro time grouped by task for a period
   const getPomodoroTimeByTask = useCallback((period: 'today' | 'week' | 'month') => {
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -335,25 +436,37 @@ export function usePomodoro() {
     return groups;
   }, [sessions]);
 
-  return {
-    settings,
-    saveSettings,
-    currentPhase,
-    timeLeft,
-    isRunning,
-    completedSessions,
-    currentTaskId,
-    currentSubtaskId,
-    start,
-    pause,
-    reset,
-    skip,
-    setPhase,
-    requestNotificationPermission,
-    getTodaySessions,
-    getTodayPomodoroTime,
-    getPomodoroTimeByPeriod,
-    getPomodoroTimeByTask,
-    sessions,
-  };
+  return (
+    <PomodoroContext.Provider value={{
+      settings,
+      saveSettings,
+      currentPhase,
+      timeLeft,
+      isRunning,
+      completedSessions,
+      currentTaskId,
+      currentSubtaskId,
+      start,
+      pause,
+      reset,
+      skip,
+      setPhase,
+      requestNotificationPermission,
+      getTodaySessions,
+      getTodayPomodoroTime,
+      getPomodoroTimeByPeriod,
+      getPomodoroTimeByTask,
+      sessions,
+    }}>
+      {children}
+    </PomodoroContext.Provider>
+  );
+}
+
+export function usePomodoro() {
+  const context = useContext(PomodoroContext);
+  if (context === undefined) {
+    throw new Error('usePomodoro must be used within a PomodoroProvider');
+  }
+  return context;
 }

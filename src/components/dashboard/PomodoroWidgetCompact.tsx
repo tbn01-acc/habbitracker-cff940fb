@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Brain, Coffee, Zap, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { usePomodoro } from '@/hooks/usePomodoro';
+import { usePomodoro } from '@/contexts/PomodoroContext';
 import { PomodoroPhase } from '@/types/service';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { useTasks } from '@/hooks/useTasks';

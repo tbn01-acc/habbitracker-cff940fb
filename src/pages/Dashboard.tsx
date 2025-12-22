@@ -103,7 +103,7 @@ export default function Dashboard() {
         </div>
 
         {/* Avatar + Greeting */}
-        <div className="flex items-center gap-3 mb-4">
+        <div className="flex items-center gap-3 mb-2">
           <button onClick={() => navigate("/profile")} className="shrink-0">
             <Avatar className="w-12 h-12 border-2 border-primary/20 hover:border-primary/50 transition-colors">
               <AvatarImage src={profile?.avatar_url || undefined} />
@@ -281,7 +281,7 @@ export default function Dashboard() {
           </TabsContent>
         </Tabs>
 
-        {/* Top Widgets Section (2 widgets, expanded by default) */}
+        {/* Top Widgets Section (2 widgets, expanded by default) - no margin/gap below */}
         <TopWidgetsSection />
       </div>
     </div>

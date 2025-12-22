@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Square, Clock, Trash2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTimeTracker } from '@/hooks/useTimeTracker';
+import { usePomodoro } from '@/contexts/PomodoroContext';
 import { useTasks } from '@/hooks/useTasks';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ export function TimeTracker() {
     isTimerRunning,
   } = useTimeTracker();
   
+  const { getPomodoroTimeByPeriod, getPomodoroTimeByTask } = usePomodoro();
   const { tasks } = useTasks();
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedSubtaskId, setSelectedSubtaskId] = useState<string | null>(null);
@@ -29,6 +31,10 @@ export function TimeTracker() {
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('today');
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId);
+
+  // Get pomodoro time for selected period
+  const pomodoroTime = useMemo(() => getPomodoroTimeByPeriod(selectedPeriod), [getPomodoroTimeByPeriod, selectedPeriod]);
+  const pomodoroByTask = useMemo(() => getPomodoroTimeByTask(selectedPeriod), [getPomodoroTimeByTask, selectedPeriod]);
 
   // Filter entries by period
   const filteredEntries = useMemo(() => {
@@ -53,12 +59,17 @@ export function TimeTracker() {
     return entries.filter(e => new Date(e.startTime) >= startDate);
   }, [entries, selectedPeriod]);
 
-  const totalTime = useMemo(() => {
+  const timeTrackerTotal = useMemo(() => {
     return filteredEntries.reduce((sum, e) => sum + e.duration, 0);
   }, [filteredEntries]);
 
+  // Combined total (time tracker + pomodoro)
+  const totalTime = timeTrackerTotal + pomodoroTime;
+
   const groupedEntries = useMemo(() => {
-    const groups: Record<string, { name: string; icon?: string; duration: number; entryIds: string[] }> = {};
+    const groups: Record<string, { name: string; icon?: string; duration: number; entryIds: string[]; isPomodoroOnly?: boolean }> = {};
+    
+    // Add time tracker entries
     filteredEntries.forEach(entry => {
       const task = tasks.find(t => t.id === entry.taskId);
       const key = entry.taskId || 'none';
@@ -71,8 +82,23 @@ export function TimeTracker() {
       groups[key].duration += entry.duration;
       groups[key].entryIds.push(entry.id);
     });
+
+    // Add pomodoro time to existing groups or create new ones
+    Object.entries(pomodoroByTask).forEach(([taskId, duration]) => {
+      const task = tasks.find(t => t.id === taskId);
+      const key = taskId === 'no_task' ? 'pomodoro_no_task' : taskId;
+      const name = taskId === 'no_task' ? 'Помодоро (без задачи)' : (task?.name || 'Без задачи');
+      const icon = task?.icon;
+      
+      if (groups[key]) {
+        groups[key].duration += duration;
+      } else {
+        groups[key] = { name, icon, duration, entryIds: [], isPomodoroOnly: taskId === 'no_task' };
+      }
+    });
+
     return Object.entries(groups).sort((a, b) => b[1].duration - a[1].duration);
-  }, [filteredEntries, tasks]);
+  }, [filteredEntries, tasks, pomodoroByTask]);
 
   const handleStart = () => {
     if (selectedTaskId) {

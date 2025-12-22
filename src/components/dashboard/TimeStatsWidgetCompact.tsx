@@ -1,13 +1,18 @@
 import { motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import { useTimeTracker } from '@/hooks/useTimeTracker';
+import { usePomodoro } from '@/contexts/PomodoroContext';
 import { useTranslation } from '@/contexts/LanguageContext';
 
 export function TimeStatsWidgetCompact() {
   const { t } = useTranslation();
   const { getTodayTotalTime, formatDuration } = useTimeTracker();
+  const { getTodayPomodoroTime } = usePomodoro();
 
-  const todayTotal = getTodayTotalTime();
+  // Combine time tracker entries + pomodoro sessions
+  const todayTimeTracker = getTodayTotalTime();
+  const todayPomodoro = getTodayPomodoroTime();
+  const todayTotal = todayTimeTracker + todayPomodoro;
 
   return (
     <motion.div
