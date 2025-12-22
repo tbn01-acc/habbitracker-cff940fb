@@ -23,6 +23,7 @@ interface TodoSectionProps {
   onSwipeRight?: () => void;
   hasNext?: boolean;
   hasPrev?: boolean;
+  compact?: boolean;
 }
 
 
@@ -39,7 +40,8 @@ export function TodoSection({
   onSwipeLeft,
   onSwipeRight,
   hasNext = false,
-  hasPrev = false
+  hasPrev = false,
+  compact = false
 }: TodoSectionProps) {
   const incompleteItems = items.filter(i => !i.completed);
   const completedCount = items.filter(i => i.completed).length;
@@ -62,12 +64,15 @@ export function TodoSection({
     }
   };
 
-  // Collapsed view - square tile with indicator
+  // Collapsed view - square tile with indicator (or compact half-height)
   if (!isExpanded) {
     return (
       <motion.button
         onClick={handleRingClick}
-        className="w-full aspect-square rounded-2xl p-4 flex flex-col items-center justify-center gap-3 shadow-card"
+        className={cn(
+          "w-full rounded-2xl p-4 flex flex-col items-center justify-center gap-2 shadow-card",
+          compact ? "h-28" : "aspect-square"
+        )}
         style={{ backgroundColor: color }}
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -78,18 +83,24 @@ export function TodoSection({
         layoutId={`tile-${title}`}
       >
         <motion.div 
-          className="w-14 h-14 rounded-full flex items-center justify-center bg-white/20"
+          className={cn(
+            "rounded-full flex items-center justify-center bg-white/20",
+            compact ? "w-10 h-10" : "w-14 h-14"
+          )}
           layoutId={`ring-${title}`}
         >
-          <span className="text-xl font-bold text-white">
+          <span className={cn("font-bold text-white", compact ? "text-lg" : "text-xl")}>
             {incompleteItems.length}
           </span>
         </motion.div>
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg flex items-center justify-center bg-white/20">
+          <div className={cn(
+            "rounded-lg flex items-center justify-center bg-white/20",
+            compact ? "w-5 h-5" : "w-6 h-6"
+          )}>
             <div className="text-white">{icon}</div>
           </div>
-          <span className="text-sm font-medium text-white">{title}</span>
+          <span className={cn("font-medium text-white", compact ? "text-xs" : "text-sm")}>{title}</span>
         </div>
       </motion.button>
     );

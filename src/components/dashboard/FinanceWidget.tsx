@@ -45,7 +45,7 @@ export function FinanceWidget({ income, expense, onExpand }: FinanceWidgetProps)
         </div>
         
         {/* Income */}
-        <div className="rounded-xl p-3 bg-blue-500 text-white">
+        <div className="rounded-xl p-3 bg-amber-600 text-white">
           <div className="flex items-center gap-2 mb-1">
             <TrendingUp className="w-4 h-4" />
             <span className="text-xs font-medium opacity-80">{t('income')}</span>

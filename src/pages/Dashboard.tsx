@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Target, CheckSquare, Wallet, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Target, CheckSquare, Wallet, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useHabits, getTodayString } from "@/hooks/useHabits";
 import { useTasks } from "@/hooks/useTasks";
 import { useFinance } from "@/hooks/useFinance";
@@ -8,27 +9,41 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { ProgressBar } from "@/components/dashboard/ProgressBar";
 import { TodoSection } from "@/components/dashboard/TodoSection";
 import { FinanceWidget } from "@/components/dashboard/FinanceWidget";
-import { PageHeader } from "@/components/PageHeader";
 import { DayQualityRing } from "@/components/dashboard/DayQualityRing";
 import { useWeather, getWeatherIcon } from "@/hooks/useWeather";
-import { useDashboardWidgets } from "@/hooks/useDashboardWidgets";
-import { PomodoroWidget } from "@/components/dashboard/PomodoroWidget";
-import { TimeStatsWidget } from "@/components/dashboard/TimeStatsWidget";
-import { WidgetSettings } from "@/components/dashboard/WidgetSettings";
+import { TopWidgetsSection } from "@/components/dashboard/TopWidgetsSection";
+import { WaterCounter, StepsCounter } from "@/components/dashboard/WaterStepsCounters";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { LanguageSelector } from "@/components/LanguageSelector";
+import { ShareButtons } from "@/components/ShareButtons";
+import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Dashboard() {
-  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [isWidgetsExpanded, setIsWidgetsExpanded] = useState(false);
+  const navigate = useNavigate();
   const { habits, toggleHabitCompletion } = useHabits();
   const { tasks, toggleTaskCompletion, getTodayTasks } = useTasks();
   const { transactions, toggleTransactionCompletion, getTodayTransactions } = useFinance();
   const { t, language } = useTranslation();
   const { weather, loading: weatherLoading } = useWeather();
-  const { getEnabledWidgets } = useDashboardWidgets();
+  const { profile, user } = useAuth();
 
   const today = getTodayString();
   const dayOfWeek = new Date().getDay();
+
+  // User name and avatar
+  const userName = profile?.display_name || user?.email?.split('@')[0] || t('guest');
+  const userInitials = userName.slice(0, 2).toUpperCase();
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 6) return t('goodNight');
+    if (hour < 12) return t('goodMorning');
+    if (hour < 18) return t('goodAfternoon');
+    return t('goodEvening');
+  };
 
   // Habits for today
   const todayHabits = habits.filter((h) => h.targetDays.includes(dayOfWeek));
@@ -68,19 +83,6 @@ export default function Dashboard() {
     finance: "hsl(var(--finance))",
   };
 
-  const enabledWidgets = getEnabledWidgets();
-
-  const renderWidget = (widgetType: string) => {
-    switch (widgetType) {
-      case "pomodoro":
-        return <PomodoroWidget key="pomodoro" />;
-      case "time_stats":
-        return <TimeStatsWidget key="time_stats" />;
-      default:
-        return null;
-    }
-  };
-
   const isLoading = false;
 
   if (isLoading) {
@@ -96,11 +98,32 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Header */}
-        <PageHeader />
+        {/* Controls Row - Top */}
+        <div className="flex items-center justify-between mb-3">
+          <ShareButtons />
+          <div className="flex items-center gap-1">
+            <LanguageSelector />
+            <ThemeToggle />
+          </div>
+        </div>
+
+        {/* Avatar + Greeting */}
+        <div className="flex items-center gap-3 mb-4">
+          <button onClick={() => navigate('/profile')} className="shrink-0">
+            <Avatar className="w-12 h-12 border-2 border-primary/20 hover:border-primary/50 transition-colors">
+              <AvatarImage src={profile?.avatar_url || undefined} />
+              <AvatarFallback className="bg-primary/10 text-primary font-medium">
+                {userInitials}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+          <p className="text-lg font-medium text-foreground">
+            {getGreeting()}, {userName}!
+          </p>
+        </div>
 
         {/* Section: Сегодня with Day Quality Ring */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground">{t("today")}</h1>
             <div className="flex items-center gap-2">
@@ -116,95 +139,68 @@ export default function Dashboard() {
           <DayQualityRing value={dayQuality} />
         </div>
 
-        {/* Widgets Section */}
-        {enabledWidgets.length > 0 && (
-          <div className="mb-6">
-            <button
-              onClick={() => setIsWidgetsExpanded(!isWidgetsExpanded)}
-              className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3 hover:text-foreground transition-colors w-full justify-between"
-            >
-              <div className="flex items-center gap-2">
-                {t("services")}:
-                {isWidgetsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-              </div>
-              <WidgetSettings />
-            </button>
-            <AnimatePresence initial={false}>
-              {isWidgetsExpanded && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: "easeInOut" }}
-                  className="overflow-hidden"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {enabledWidgets
-                      .filter((w) => w.type !== "quick_services")
-                      .map((widget) => renderWidget(widget.type))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+        {/* Top Widgets Section (2 widgets, expanded by default) */}
+        <TopWidgetsSection />
 
-        {/* Section: Выполнено (Collapsible) */}
-        <div className="mb-6">
-          <button
-            onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
-            className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-3 hover:text-foreground transition-colors"
-          >
-            {t("completed")}:
-            {isCompletedExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-          <AnimatePresence initial={true}>
-            {isCompletedExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: "easeInOut" }}
-                className="overflow-hidden"
-              >
-                <div className="bg-card rounded-2xl p-4 shadow-card border border-border">
-                  <ProgressBar
-                    icon={<Target className="w-4 h-4" />}
-                    completed={completedHabits.length}
-                    total={todayHabits.length}
-                    label={t("habitsLabel")}
-                    color={colors.habits}
-                  />
-                  <ProgressBar
-                    icon={<CheckSquare className="w-4 h-4" />}
-                    completed={completedTasks.length}
-                    total={todayTasks.length}
-                    label={t("tasksLabel")}
-                    color={colors.tasks}
-                  />
-                  <ProgressBar
-                    icon={<Wallet className="w-4 h-4" />}
-                    completed={completedTransactions.length}
-                    total={todayTransactions.length}
-                    label={t("operationsLabel")}
-                    color={colors.finance}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Section: Сделать/Выполнено (Tabbed) */}
+        <Tabs defaultValue="todo" className="mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="todo">{t("todoTab")}</TabsTrigger>
+            <TabsTrigger value="done">{t("doneTab")}</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="todo" className="mt-0">
+            <div className="space-y-3">
+              <AnimatePresence mode="wait">
+                {expandedSection === null && (
+                  <>
+                    {/* Row 1: Habits and Tasks (half height) */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <TodoSection
+                        title={t("habits")}
+                        items={todayHabits.map((h) => ({
+                          id: h.id,
+                          name: h.name,
+                          icon: h.icon,
+                          completed: h.completedDates.includes(today),
+                        }))}
+                        color={colors.habits}
+                        icon={<Target className="w-4 h-4" />}
+                        onToggle={(id) => toggleHabitCompletion(id, today)}
+                        isExpanded={false}
+                        onExpand={() => setExpandedSection("habits")}
+                        compact
+                      />
 
-        {/* Section: Сделать */}
-        <h2 className="text-sm font-medium text-muted-foreground mb-3">{t("toDo")}:</h2>
+                      <TodoSection
+                        title={t("tasks")}
+                        items={todayTasks.map((t) => ({
+                          id: t.id,
+                          name: t.name,
+                          icon: t.icon,
+                          completed: t.completed,
+                        }))}
+                        color={colors.tasks}
+                        icon={<CheckSquare className="w-4 h-4" />}
+                        onToggle={toggleTaskCompletion}
+                        isExpanded={false}
+                        onExpand={() => setExpandedSection("tasks")}
+                        compact
+                      />
+                    </div>
 
-        <div className="space-y-3">
-          <AnimatePresence mode="wait">
-            {expandedSection === null && (
-              <>
-                {/* Row 1: Habits and Tasks */}
-                <div className="grid grid-cols-2 gap-3">
+                    {/* Row 2: Finance Widget (full width) */}
+                    <FinanceWidget
+                      income={todayIncome}
+                      expense={todayExpense}
+                      onExpand={() => setExpandedSection("finance")}
+                    />
+                  </>
+                )}
+
+                {expandedSection === "habits" && (
                   <TodoSection
+                    key="habits-expanded"
                     title={t("habits")}
                     items={todayHabits.map((h) => ({
                       id: h.id,
@@ -215,11 +211,17 @@ export default function Dashboard() {
                     color={colors.habits}
                     icon={<Target className="w-4 h-4" />}
                     onToggle={(id) => toggleHabitCompletion(id, today)}
-                    isExpanded={false}
-                    onExpand={() => setExpandedSection("habits")}
+                    isExpanded={true}
+                    onCollapse={() => setExpandedSection(null)}
+                    onSwipeLeft={() => setExpandedSection("tasks")}
+                    hasPrev={false}
+                    hasNext={true}
                   />
+                )}
 
+                {expandedSection === "tasks" && (
                   <TodoSection
+                    key="tasks-expanded"
                     title={t("tasks")}
                     items={todayTasks.map((t) => ({
                       id: t.id,
@@ -230,83 +232,69 @@ export default function Dashboard() {
                     color={colors.tasks}
                     icon={<CheckSquare className="w-4 h-4" />}
                     onToggle={toggleTaskCompletion}
-                    isExpanded={false}
-                    onExpand={() => setExpandedSection("tasks")}
+                    isExpanded={true}
+                    onCollapse={() => setExpandedSection(null)}
+                    onSwipeLeft={() => setExpandedSection("finance")}
+                    onSwipeRight={() => setExpandedSection("habits")}
+                    hasPrev={true}
+                    hasNext={true}
                   />
-                </div>
+                )}
 
-                {/* Row 2: Finance Widget (full width) */}
-                <FinanceWidget
-                  income={todayIncome}
-                  expense={todayExpense}
-                  onExpand={() => setExpandedSection("finance")}
-                />
-              </>
-            )}
-
-            {expandedSection === "habits" && (
-              <TodoSection
-                key="habits-expanded"
-                title={t("habits")}
-                items={todayHabits.map((h) => ({
-                  id: h.id,
-                  name: h.name,
-                  icon: h.icon,
-                  completed: h.completedDates.includes(today),
-                }))}
-                color={colors.habits}
+                {expandedSection === "finance" && (
+                  <TodoSection
+                    key="finance-expanded"
+                    title={t("finance")}
+                    items={todayTransactions.map((t) => ({
+                      id: t.id,
+                      name: `${t.type === "income" ? "+" : "-"}${t.amount}₽ ${t.name}`,
+                      completed: t.completed,
+                    }))}
+                    color={colors.finance}
+                    icon={<Wallet className="w-4 h-4" />}
+                    onToggle={toggleTransactionCompletion}
+                    isExpanded={true}
+                    onCollapse={() => setExpandedSection(null)}
+                    onSwipeRight={() => setExpandedSection("tasks")}
+                    hasPrev={true}
+                    hasNext={false}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="done" className="mt-0">
+            <div className="bg-card rounded-2xl p-4 shadow-card border border-border">
+              <ProgressBar
                 icon={<Target className="w-4 h-4" />}
-                onToggle={(id) => toggleHabitCompletion(id, today)}
-                isExpanded={true}
-                onCollapse={() => setExpandedSection(null)}
-                onSwipeLeft={() => setExpandedSection("tasks")}
-                hasPrev={false}
-                hasNext={true}
+                completed={completedHabits.length}
+                total={todayHabits.length}
+                label={t("habitsLabel")}
+                color={colors.habits}
               />
-            )}
-
-            {expandedSection === "tasks" && (
-              <TodoSection
-                key="tasks-expanded"
-                title={t("tasks")}
-                items={todayTasks.map((t) => ({
-                  id: t.id,
-                  name: t.name,
-                  icon: t.icon,
-                  completed: t.completed,
-                }))}
-                color={colors.tasks}
+              <ProgressBar
                 icon={<CheckSquare className="w-4 h-4" />}
-                onToggle={toggleTaskCompletion}
-                isExpanded={true}
-                onCollapse={() => setExpandedSection(null)}
-                onSwipeLeft={() => setExpandedSection("finance")}
-                onSwipeRight={() => setExpandedSection("habits")}
-                hasPrev={true}
-                hasNext={true}
+                completed={completedTasks.length}
+                total={todayTasks.length}
+                label={t("tasksLabel")}
+                color={colors.tasks}
               />
-            )}
-
-            {expandedSection === "finance" && (
-              <TodoSection
-                key="finance-expanded"
-                title={t("finance")}
-                items={todayTransactions.map((t) => ({
-                  id: t.id,
-                  name: `${t.type === "income" ? "+" : "-"}${t.amount}₽ ${t.name}`,
-                  completed: t.completed,
-                }))}
-                color={colors.finance}
+              <ProgressBar
                 icon={<Wallet className="w-4 h-4" />}
-                onToggle={toggleTransactionCompletion}
-                isExpanded={true}
-                onCollapse={() => setExpandedSection(null)}
-                onSwipeRight={() => setExpandedSection("tasks")}
-                hasPrev={true}
-                hasNext={false}
+                completed={completedTransactions.length}
+                total={todayTransactions.length}
+                label={t("operationsLabel")}
+                color={colors.finance}
               />
-            )}
-          </AnimatePresence>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* Water and Steps Counters */}
+        <div className="grid grid-cols-2 gap-4">
+          <WaterCounter />
+          <StepsCounter />
         </div>
       </div>
     </div>

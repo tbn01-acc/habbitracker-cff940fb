@@ -475,6 +475,15 @@ export const translations = {
     transactionsCount: 'Транзакций',
     noSyncHistory: 'Нет истории синхронизации',
     syncedItems: 'Синхронизировано элементов',
+    
+    // Widget selection
+    selectWidgets: 'Выбор виджетов',
+    selectUpToTwo: 'Выберите до 2 виджетов для отображения',
+    maxTwoWidgets: 'Можно выбрать максимум 2 виджета',
+    todoTab: 'Сделать',
+    doneTab: 'Выполнено',
+    waterCounter: 'Счётчик воды',
+    stepsCounter: 'Счётчик шагов',
   },
   en: {
     // Pomodoro time tracking
@@ -950,6 +959,15 @@ export const translations = {
     transactionsCount: 'Transactions',
     noSyncHistory: 'No sync history',
     syncedItems: 'Synced items',
+    
+    // Widget selection
+    selectWidgets: 'Select widgets',
+    selectUpToTwo: 'Select up to 2 widgets to display',
+    maxTwoWidgets: 'You can select a maximum of 2 widgets',
+    todoTab: 'To do',
+    doneTab: 'Done',
+    waterCounter: 'Water counter',
+    stepsCounter: 'Steps counter',
   },
   es: {
     // Pomodoro time tracking
@@ -1425,6 +1443,15 @@ export const translations = {
     transactionsCount: 'Transacciones',
     noSyncHistory: 'Sin historial de sincronización',
     syncedItems: 'Elementos sincronizados',
+    
+    // Widget selection
+    selectWidgets: 'Seleccionar widgets',
+    selectUpToTwo: 'Seleccione hasta 2 widgets para mostrar',
+    maxTwoWidgets: 'Puede seleccionar un máximo de 2 widgets',
+    todoTab: 'Por hacer',
+    doneTab: 'Hecho',
+    waterCounter: 'Contador de agua',
+    stepsCounter: 'Contador de pasos',
   },
 } as const;
 
