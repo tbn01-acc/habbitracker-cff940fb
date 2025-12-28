@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, RotateCcw, SkipForward, Settings2, Coffee, Brain, Zap } from 'lucide-react';
+import { Play, Pause, RotateCcw, SkipForward, Settings2, Coffee, Brain, Zap, ListTodo, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePomodoro } from '@/contexts/PomodoroContext';
+import { useTasks } from '@/hooks/useTasks';
 import { PomodoroSettings, PomodoroPhase } from '@/types/service';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -20,6 +22,7 @@ export function PomodoroTimer() {
     timeLeft,
     isRunning,
     completedSessions,
+    currentTaskId,
     start,
     pause,
     reset,
@@ -29,8 +32,15 @@ export function PomodoroTimer() {
     getTodaySessions,
   } = usePomodoro();
   
+  const { tasks } = useTasks();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [tempSettings, setTempSettings] = useState<PomodoroSettings>(settings);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | undefined>(currentTaskId);
+
+  // Sync with context's currentTaskId
+  useEffect(() => {
+    setSelectedTaskId(currentTaskId);
+  }, [currentTaskId]);
 
   useEffect(() => {
     setTempSettings(settings);
@@ -83,6 +93,24 @@ export function PomodoroTimer() {
   );
 
   const todaySessions = getTodaySessions();
+  
+  // Get incomplete tasks for selection
+  const incompleteTasks = tasks.filter(t => !t.completed);
+  const selectedTask = tasks.find(t => t.id === selectedTaskId);
+
+  const handleStart = () => {
+    if (isRunning) {
+      pause();
+    } else {
+      start(selectedTaskId);
+    }
+  };
+
+  const handleClearTask = () => {
+    if (!isRunning) {
+      setSelectedTaskId(undefined);
+    }
+  };
 
   const handleSaveSettings = () => {
     saveSettings(tempSettings);
@@ -91,6 +119,52 @@ export function PomodoroTimer() {
 
   return (
     <div className="space-y-4">
+      {/* Task selector */}
+      <div className="px-4">
+        <Label className="text-xs text-muted-foreground mb-1.5 block">
+          Привязанная задача
+        </Label>
+        <div className="flex gap-2">
+          <Select
+            value={selectedTaskId || 'none'}
+            onValueChange={(value) => !isRunning && setSelectedTaskId(value === 'none' ? undefined : value)}
+            disabled={isRunning}
+          >
+            <SelectTrigger className="flex-1">
+              <div className="flex items-center gap-2 truncate">
+                <ListTodo className="w-4 h-4 shrink-0 text-muted-foreground" />
+                <SelectValue placeholder={t('selectTask') || 'Выберите задачу'} />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">
+                <span className="text-muted-foreground">Без задачи</span>
+              </SelectItem>
+              {incompleteTasks.map((task) => (
+                <SelectItem key={task.id} value={task.id}>
+                  <span className="truncate">{task.name}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedTaskId && !isRunning && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClearTask}
+              className="shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+        {selectedTask && (
+          <p className="text-xs text-muted-foreground mt-1 truncate">
+            Время будет записано для: {selectedTask.name}
+          </p>
+        )}
+      </div>
+
       {/* Phase selector */}
       <div className="flex justify-center gap-2">
         {(['work', 'short_break', 'long_break'] as PomodoroPhase[]).map((phase) => {
@@ -167,7 +241,7 @@ export function PomodoroTimer() {
           
           <Button
             size="icon"
-            onClick={() => isRunning ? pause() : start()}
+            onClick={handleStart}
             className="w-14 h-14 rounded-full"
             style={{ backgroundColor: phaseInfo.color }}
           >
