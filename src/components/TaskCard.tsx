@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Check, MoreVertical, Pencil, Trash2, Repeat, Bell, ListTodo, Paperclip, StickyNote, Play, Square, Clock } from 'lucide-react';
+import { Check, MoreVertical, Pencil, Trash2, Repeat, Bell, ListTodo, Paperclip, StickyNote, Play, Square, Clock, Timer } from 'lucide-react';
 import { Task } from '@/types/task';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { usePomodoro } from '@/contexts/PomodoroContext';
+import { toast } from 'sonner';
 
 interface TaskCardProps {
   task: Task;
@@ -36,7 +38,18 @@ export function TaskCard({
   formatDuration
 }: TaskCardProps) {
   const { t } = useTranslation();
+  const { start: startPomodoro, isRunning: isPomodoroRunning, currentTaskId: pomodoroTaskId } = usePomodoro();
 
+  const isPomodoroActiveForThis = isPomodoroRunning && pomodoroTaskId === task.id;
+
+  const handleStartPomodoro = () => {
+    if (isPomodoroRunning) {
+      toast.info('Помодоро уже запущен');
+      return;
+    }
+    startPomodoro(task.id);
+    toast.success(`Помодоро запущен для "${task.name}"`);
+  };
   const priorityColors = {
     low: 'bg-muted text-muted-foreground',
     medium: 'bg-accent/20 text-accent',
@@ -200,6 +213,23 @@ export function TaskCard({
                     {t('startTimer')}
                   </>
                 )}
+              </button>
+            )}
+
+            {/* Pomodoro Button */}
+            {!task.completed && (
+              <button
+                onClick={handleStartPomodoro}
+                className={cn(
+                  "text-xs px-2 py-0.5 rounded-full flex items-center gap-1 transition-colors",
+                  isPomodoroActiveForThis 
+                    ? "bg-task/30 text-task animate-pulse" 
+                    : "bg-task/10 text-task hover:bg-task/20"
+                )}
+                title={isPomodoroActiveForThis ? 'Помодоро активен' : 'Запустить Помодоро'}
+              >
+                <Timer className="w-3 h-3" />
+                {isPomodoroActiveForThis ? 'Помодоро' : 'Помодоро'}
               </button>
             )}
           </div>
