@@ -10,6 +10,9 @@ interface Subscription {
   started_at: string;
   expires_at: string | null;
   bonus_days: number;
+  is_trial: boolean;
+  trial_bonus_months: number;
+  trial_ends_at: string | null;
 }
 
 interface ReferralStats {
@@ -57,7 +60,10 @@ export function useSubscription() {
         period: data.period,
         started_at: data.started_at,
         expires_at: data.expires_at,
-        bonus_days: data.bonus_days
+        bonus_days: data.bonus_days,
+        is_trial: (data as any).is_trial ?? false,
+        trial_bonus_months: (data as any).trial_bonus_months ?? 0,
+        trial_ends_at: (data as any).trial_ends_at ?? null
       });
     } else {
       // Create default free subscription if none exists
@@ -79,7 +85,10 @@ export function useSubscription() {
           period: newSub.period,
           started_at: newSub.started_at,
           expires_at: newSub.expires_at,
-          bonus_days: newSub.bonus_days
+          bonus_days: newSub.bonus_days,
+          is_trial: (newSub as any).is_trial ?? false,
+          trial_bonus_months: (newSub as any).trial_bonus_months ?? 0,
+          trial_ends_at: (newSub as any).trial_ends_at ?? null
         });
       }
     }
@@ -118,11 +127,27 @@ export function useSubscription() {
     return expiresAt > new Date();
   };
 
+  const isInTrial = () => {
+    if (!subscription) return false;
+    if (!subscription.is_trial) return false;
+    if (!subscription.trial_ends_at) return false;
+    return new Date(subscription.trial_ends_at) > new Date();
+  };
+
+  const trialDaysLeft = () => {
+    if (!subscription?.trial_ends_at) return 0;
+    const diff = new Date(subscription.trial_ends_at).getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  };
+
   return {
     subscription,
     referralStats,
     loading,
     isProActive: isProActive(),
+    isInTrial: isInTrial(),
+    trialDaysLeft: trialDaysLeft(),
+    trialBonusMonths: subscription?.trial_bonus_months || 0,
     currentPlan: isProActive() ? 'pro' : 'free' as 'free' | 'pro',
     referralCode: profile?.referral_code || null,
     refetchSubscription: fetchSubscription,

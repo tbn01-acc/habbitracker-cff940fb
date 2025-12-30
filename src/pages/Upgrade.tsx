@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Crown, Check, ArrowLeft, CreditCard, Smartphone, Building2 } from 'lucide-react';
+import { Crown, Check, ArrowLeft, CreditCard, Smartphone, Building2, Gift, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 
 type PlanPeriod = 'monthly' | 'quarterly' | 'semiannual' | 'annual' | 'biennial' | 'lifetime';
@@ -23,14 +24,15 @@ interface PricingPlan {
   monthlyRub: string;
   monthlyUsd: string;
   savings?: string;
+  bonusEligible?: boolean;
 }
 
 const pricingPlans: PricingPlan[] = [
   { period: 'monthly', labelRu: '1 месяц', labelEn: '1 month', priceRub: 399, priceUsd: 3.99, monthlyRub: '399 ₽/мес', monthlyUsd: '$3.99/mo' },
   { period: 'quarterly', labelRu: '3 месяца', labelEn: '3 months', priceRub: 1047, priceUsd: 10.47, monthlyRub: '349 ₽/мес', monthlyUsd: '$3.49/mo', savings: '-13%' },
   { period: 'semiannual', labelRu: '6 месяцев', labelEn: '6 months', priceRub: 1794, priceUsd: 17.94, monthlyRub: '299 ₽/мес', monthlyUsd: '$2.99/mo', savings: '-25%' },
-  { period: 'annual', labelRu: '12 месяцев', labelEn: '12 months', priceRub: 2988, priceUsd: 29.88, monthlyRub: '249 ₽/мес', monthlyUsd: '$2.49/mo', savings: '-38%' },
-  { period: 'biennial', labelRu: '24 месяца', labelEn: '24 months', priceRub: 4776, priceUsd: 47.76, monthlyRub: '199 ₽/мес', monthlyUsd: '$1.99/mo', savings: '-50%' },
+  { period: 'annual', labelRu: '12 месяцев', labelEn: '12 months', priceRub: 2988, priceUsd: 29.88, monthlyRub: '249 ₽/мес', monthlyUsd: '$2.49/mo', savings: '-38%', bonusEligible: true },
+  { period: 'biennial', labelRu: '24 месяца', labelEn: '24 months', priceRub: 4776, priceUsd: 47.76, monthlyRub: '199 ₽/мес', monthlyUsd: '$1.99/mo', savings: '-50%', bonusEligible: true },
   { period: 'lifetime', labelRu: 'Навсегда', labelEn: 'Lifetime', priceRub: 5990, priceUsd: 59.90, monthlyRub: 'навсегда', monthlyUsd: 'forever', savings: '∞' },
 ];
 
@@ -46,6 +48,7 @@ const proFeatures = [
 export default function Upgrade() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isInTrial, trialDaysLeft, trialBonusMonths } = useSubscription();
   const { language } = useTranslation();
   const isRussian = language === 'ru';
 
@@ -53,6 +56,7 @@ export default function Upgrade() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
 
   const selectedPlanData = pricingPlans.find(p => p.period === selectedPlan)!;
+  const showBonus = isInTrial && trialBonusMonths > 0 && selectedPlanData.bonusEligible;
 
   const handlePurchase = () => {
     if (!user) {
@@ -87,6 +91,38 @@ export default function Upgrade() {
             </div>
           </div>
         </div>
+
+        {/* Trial Bonus Banner */}
+        {isInTrial && trialBonusMonths > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="mb-6 border-green-500/50 bg-gradient-to-br from-green-500/10 to-transparent">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <Gift className="w-5 h-5 text-green-500" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-medium text-foreground flex items-center gap-2">
+                      {isRussian ? 'Ваш бонус за регистрацию!' : 'Your signup bonus!'}
+                      <Badge variant="secondary" className="bg-green-500/20 text-green-500">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {trialDaysLeft} {isRussian ? 'дн.' : 'days'}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {isRussian 
+                        ? `+${trialBonusMonths} мес. бесплатно при покупке годового или 2-летнего тарифа`
+                        : `+${trialBonusMonths} mo. free with annual or 2-year plan`}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Features */}
         <Card className="mb-6 border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-transparent">
@@ -139,6 +175,11 @@ export default function Upgrade() {
                             {plan.savings && (
                               <Badge variant="secondary" className="text-xs bg-green-500/20 text-green-500">
                                 {plan.savings}
+                              </Badge>
+                            )}
+                            {isInTrial && trialBonusMonths > 0 && plan.bonusEligible && (
+                              <Badge variant="secondary" className="text-xs bg-purple-500/20 text-purple-500">
+                                +{trialBonusMonths} {isRussian ? 'мес.' : 'mo.'}
                               </Badge>
                             )}
                           </div>
@@ -242,10 +283,25 @@ export default function Upgrade() {
                     : `$${selectedPlanData.priceUsd}`
                   }
                 </div>
+                {showBonus && (
+                  <div className="text-sm text-green-500 font-medium">
+                    +{trialBonusMonths} {isRussian ? 'мес. в подарок' : 'mo. free bonus'}
+                  </div>
+                )}
               </div>
-              <Badge className="bg-amber-500 text-black">
-                {isRussian ? selectedPlanData.labelRu : selectedPlanData.labelEn}
-              </Badge>
+              <div className="text-right">
+                <Badge className="bg-amber-500 text-black">
+                  {isRussian ? selectedPlanData.labelRu : selectedPlanData.labelEn}
+                </Badge>
+                {showBonus && (
+                  <div className="mt-1">
+                    <Badge variant="outline" className="border-green-500 text-green-500 text-xs">
+                      <Gift className="w-3 h-3 mr-1" />
+                      {isRussian ? 'Бонус!' : 'Bonus!'}
+                    </Badge>
+                  </div>
+                )}
+              </div>
             </div>
             <Button
               onClick={handlePurchase}

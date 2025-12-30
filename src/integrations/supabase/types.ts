@@ -152,9 +152,12 @@ export type Database = {
           created_at: string
           expires_at: string | null
           id: string
+          is_trial: boolean | null
           period: Database["public"]["Enums"]["subscription_period"] | null
           plan: Database["public"]["Enums"]["subscription_plan"]
           started_at: string
+          trial_bonus_months: number | null
+          trial_ends_at: string | null
           updated_at: string
           user_id: string
         }
@@ -163,9 +166,12 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_trial?: boolean | null
           period?: Database["public"]["Enums"]["subscription_period"] | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
+          trial_bonus_months?: number | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -174,9 +180,12 @@ export type Database = {
           created_at?: string
           expires_at?: string | null
           id?: string
+          is_trial?: boolean | null
           period?: Database["public"]["Enums"]["subscription_period"] | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
           started_at?: string
+          trial_bonus_months?: number | null
+          trial_ends_at?: string | null
           updated_at?: string
           user_id?: string
         }

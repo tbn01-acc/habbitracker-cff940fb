@@ -78,37 +78,10 @@ export function useAuth() {
         emailRedirectTo: redirectUrl,
         data: {
           full_name: displayName,
-          referral_code: referralCode,
+          referred_by: referralCode, // Pass referral code to trigger so it can process it
         },
       },
     });
-
-    // If signup successful and we have a referral code, process it
-    if (!error && data.user && referralCode) {
-      // Find the referrer by their referral code
-      const { data: referrerProfile } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('referral_code', referralCode)
-        .single();
-      
-      if (referrerProfile) {
-        // Update the new user's profile with referred_by
-        await supabase
-          .from('profiles')
-          .update({ referred_by: referrerProfile.user_id })
-          .eq('user_id', data.user.id);
-        
-        // Create referral record
-        await supabase
-          .from('referrals')
-          .insert({
-            referrer_id: referrerProfile.user_id,
-            referred_id: data.user.id,
-            referred_has_paid: false
-          });
-      }
-    }
 
     return { error };
   };
