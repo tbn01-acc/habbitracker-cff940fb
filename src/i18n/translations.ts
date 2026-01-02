@@ -508,6 +508,14 @@ export const translations = {
     trialDaysLeft: 'Осталось дней',
     guestMode: 'Гостевой режим',
     guestModeDescription: 'PRO на 24 часа без сохранения данных',
+    
+    // Tag selector
+    selectTags: 'Выберите теги',
+    searchTags: 'Поиск тегов...',
+    noTagsFound: 'Теги не найдены',
+    noTagsCreated: 'Теги ещё не созданы',
+    createTagsInProfile: 'Создайте теги в профиле',
+    tagStatistics: 'Статистика по тегам',
   },
   en: {
     // Pomodoro time tracking
@@ -1014,6 +1022,14 @@ export const translations = {
     trialDaysLeft: 'Days left',
     guestMode: 'Guest Mode',
     guestModeDescription: 'PRO for 24 hours without saving data',
+    
+    // Tag selector
+    selectTags: 'Select tags',
+    searchTags: 'Search tags...',
+    noTagsFound: 'No tags found',
+    noTagsCreated: 'No tags created yet',
+    createTagsInProfile: 'Create tags in your profile',
+    tagStatistics: 'Tag Statistics',
   },
   es: {
     // Pomodoro time tracking
@@ -1520,6 +1536,14 @@ export const translations = {
     trialDaysLeft: 'Días restantes',
     guestMode: 'Modo invitado',
     guestModeDescription: 'PRO por 24 horas sin guardar datos',
+    
+    // Tag selector
+    selectTags: 'Seleccionar etiquetas',
+    searchTags: 'Buscar etiquetas...',
+    noTagsFound: 'No se encontraron etiquetas',
+    noTagsCreated: 'Aún no hay etiquetas',
+    createTagsInProfile: 'Crea etiquetas en tu perfil',
+    tagStatistics: 'Estadísticas de etiquetas',
   },
 } as const;
 
