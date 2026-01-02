@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { TranslationKey } from '@/i18n/translations';
 import { cn } from '@/lib/utils';
+import { TagSelector } from '@/components/TagSelector';
+import { useAuth } from '@/hooks/useAuth';
 
 interface HabitDialogProps {
   open: boolean;
@@ -21,12 +23,14 @@ interface HabitDialogProps {
 const WEEKDAY_KEYS: TranslationKey[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 export function HabitDialog({ open, onClose, onSave, habit, categories, tags }: HabitDialogProps) {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(HABIT_ICONS[0]);
   const [color, setColor] = useState(HABIT_COLORS[0]);
   const [targetDays, setTargetDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [categoryId, setCategoryId] = useState<string | undefined>();
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [commonTagIds, setCommonTagIds] = useState<string[]>([]);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -36,7 +40,10 @@ export function HabitDialog({ open, onClose, onSave, habit, categories, tags }: 
       setColor(habit.color);
       setTargetDays(habit.targetDays);
       setCategoryId(habit.categoryId);
-      setTagIds(habit.tagIds || []);
+      // Split tagIds into local and common tags based on tag source
+      const localTagIdSet = new Set(tags.map(t => t.id));
+      setTagIds((habit.tagIds || []).filter(id => localTagIdSet.has(id)));
+      setCommonTagIds((habit.tagIds || []).filter(id => !localTagIdSet.has(id)));
     } else {
       setName('');
       setIcon(HABIT_ICONS[0]);
@@ -44,11 +51,14 @@ export function HabitDialog({ open, onClose, onSave, habit, categories, tags }: 
       setTargetDays([1, 2, 3, 4, 5]);
       setCategoryId(undefined);
       setTagIds([]);
+      setCommonTagIds([]);
     }
-  }, [habit, open]);
+  }, [habit, open, tags]);
 
   const handleSave = () => {
     if (!name.trim()) return;
+    // Combine local and common tagIds
+    const allTagIds = [...tagIds, ...commonTagIds];
     onSave({
       name: name.trim(),
       icon,
@@ -56,7 +66,7 @@ export function HabitDialog({ open, onClose, onSave, habit, categories, tags }: 
       frequency: 'weekly',
       targetDays,
       categoryId,
-      tagIds,
+      tagIds: allTagIds,
     });
     onClose();
   };
@@ -156,7 +166,7 @@ export function HabitDialog({ open, onClose, onSave, habit, categories, tags }: 
                 </div>
               )}
 
-              {/* Tags */}
+              {/* Local Tags */}
               {tags.length > 0 && (
                 <div className="space-y-2">
                   <Label>{t('tagsLabel')}</Label>
@@ -178,6 +188,17 @@ export function HabitDialog({ open, onClose, onSave, habit, categories, tags }: 
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Common Tags (from profile) */}
+              {user && (
+                <div className="space-y-2">
+                  <Label>{t('commonTags')}</Label>
+                  <TagSelector 
+                    selectedTagIds={commonTagIds} 
+                    onChange={setCommonTagIds} 
+                  />
                 </div>
               )}
 

@@ -7,9 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { SubtaskList } from '@/components/SubtaskList';
 import { TaskAttachments } from '@/components/TaskAttachments';
+import { TagSelector } from '@/components/TagSelector';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
 import { getNotificationPermissionStatus } from '@/hooks/useTaskReminders';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TaskDialogProps {
   open: boolean;
@@ -24,6 +26,7 @@ interface TaskDialogProps {
 }
 
 export function TaskDialog({ open, onClose, onSave, task, categories, tags, onAddCategory, onAddTag, onRequestNotificationPermission }: TaskDialogProps) {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(TASK_ICONS[0]);
   const [color, setColor] = useState(TASK_COLORS[0]);
@@ -32,6 +35,7 @@ export function TaskDialog({ open, onClose, onSave, task, categories, tags, onAd
   const [status, setStatus] = useState<TaskStatus>('not_started');
   const [categoryId, setCategoryId] = useState<string | undefined>(undefined);
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [commonTagIds, setCommonTagIds] = useState<string[]>([]);
   const [recurrence, setRecurrence] = useState<TaskRecurrence>('none');
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState('09:00');
@@ -55,7 +59,9 @@ export function TaskDialog({ open, onClose, onSave, task, categories, tags, onAd
       setPriority(task.priority);
       setStatus(task.status);
       setCategoryId(task.categoryId);
-      setTagIds(task.tagIds);
+      const localTagIdSet = new Set(tags.map(t => t.id));
+      setTagIds(task.tagIds.filter(id => localTagIdSet.has(id)));
+      setCommonTagIds(task.tagIds.filter(id => !localTagIdSet.has(id)));
       setRecurrence(task.recurrence || 'none');
       setReminderEnabled(task.reminder?.enabled || false);
       setReminderTime(task.reminder?.time || '09:00');
@@ -73,6 +79,7 @@ export function TaskDialog({ open, onClose, onSave, task, categories, tags, onAd
       setStatus('not_started');
       setCategoryId(undefined);
       setTagIds([]);
+      setCommonTagIds([]);
       setRecurrence('none');
       setReminderEnabled(false);
       setReminderTime('09:00');
@@ -82,16 +89,17 @@ export function TaskDialog({ open, onClose, onSave, task, categories, tags, onAd
       setShowSubtasks(false);
       setShowAttachments(false);
     }
-  }, [task, open]);
+  }, [task, open, tags]);
 
   const handleSave = () => {
     if (!name.trim()) return;
     const reminder: TaskReminder | undefined = reminderEnabled 
       ? { enabled: true, time: reminderTime }
       : undefined;
+    const allTagIds = [...tagIds, ...commonTagIds];
     onSave({ 
       name: name.trim(), icon, color, dueDate, priority, status, 
-      categoryId, tagIds, recurrence, reminder, subtasks, attachments, notes
+      categoryId, tagIds: allTagIds, recurrence, reminder, subtasks, attachments, notes
     });
     onClose();
   };
@@ -447,6 +455,19 @@ export function TaskDialog({ open, onClose, onSave, task, categories, tags, onAd
                 )}
               </div>
             </div>
+
+            {/* Common Tags (from profile) */}
+            {user && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  {t('commonTags')}
+                </label>
+                <TagSelector 
+                  selectedTagIds={commonTagIds} 
+                  onChange={setCommonTagIds} 
+                />
+              </div>
+            )}
 
             {/* Icon Selection */}
             <div className="mb-4">

@@ -4,8 +4,10 @@ import { X } from 'lucide-react';
 import { FinanceTransaction, FINANCE_CATEGORIES, FinanceCategory, FinanceTag } from '@/types/finance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TagSelector } from '@/components/TagSelector';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 interface TransactionDialogProps {
   open: boolean;
@@ -17,6 +19,7 @@ interface TransactionDialogProps {
 }
 
 export function TransactionDialog({ open, onClose, onSave, transaction, categories, tags }: TransactionDialogProps) {
+  const { user } = useAuth();
   const [name, setName] = useState('');
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
@@ -24,6 +27,7 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [customCategoryId, setCustomCategoryId] = useState<string | undefined>();
   const [tagIds, setTagIds] = useState<string[]>([]);
+  const [commonTagIds, setCommonTagIds] = useState<string[]>([]);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -34,7 +38,9 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
       setCategory(transaction.category);
       setDate(transaction.date);
       setCustomCategoryId(transaction.customCategoryId);
-      setTagIds(transaction.tagIds || []);
+      const localTagIdSet = new Set(tags.map(t => t.id));
+      setTagIds((transaction.tagIds || []).filter(id => localTagIdSet.has(id)));
+      setCommonTagIds((transaction.tagIds || []).filter(id => !localTagIdSet.has(id)));
     } else {
       setName('');
       setType('expense');
@@ -43,11 +49,13 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
       setDate(new Date().toISOString().split('T')[0]);
       setCustomCategoryId(undefined);
       setTagIds([]);
+      setCommonTagIds([]);
     }
-  }, [transaction, open]);
+  }, [transaction, open, tags]);
 
   const handleSave = () => {
     if (!name.trim() || !amount) return;
+    const allTagIds = [...tagIds, ...commonTagIds];
     onSave({ 
       name: name.trim(), 
       type, 
@@ -55,7 +63,7 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
       category, 
       date,
       customCategoryId,
-      tagIds,
+      tagIds: allTagIds,
     });
     onClose();
   };
@@ -272,7 +280,20 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
             </Button>
           </motion.div>
         </>
-      )}
+            )}
+
+            {/* Common Tags (from profile) */}
+            {user && (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-foreground mb-2">
+                  {t('commonTags')}
+                </label>
+                <TagSelector 
+                  selectedTagIds={commonTagIds} 
+                  onChange={setCommonTagIds} 
+                />
+              </div>
+            )}
     </AnimatePresence>
   );
 }
