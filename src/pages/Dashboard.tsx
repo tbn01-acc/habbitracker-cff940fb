@@ -11,6 +11,7 @@ import { TodoSection } from "@/components/dashboard/TodoSection";
 import { FinanceWidget } from "@/components/dashboard/FinanceWidget";
 import { DayQualityRing } from "@/components/dashboard/DayQualityRing";
 import { TopWidgetsSection } from "@/components/dashboard/TopWidgetsSection";
+import { TagShortcuts } from "@/components/dashboard/TagShortcuts";
 import { GuestModeBanner } from "@/components/GuestModeBanner";
 import { AppHeader } from "@/components/AppHeader";
 import { useAuth } from "@/hooks/useAuth";
@@ -258,6 +259,9 @@ export default function Dashboard() {
 
         {/* Top Widgets Section */}
         <TopWidgetsSection />
+
+        {/* Tag Shortcuts */}
+        <TagShortcuts />
       </div>
     </div>
   );

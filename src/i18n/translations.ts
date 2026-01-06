@@ -551,6 +551,19 @@ export const translations = {
     trendsChart: "Тренды",
     categoryBreakdown: "По категориям",
     completionTrend: "Тренд выполнения",
+
+    // Tag Page
+    tagNotFound: "Тег не найден",
+    backToHome: "На главную",
+    hours: "ч",
+    hour: "ч",
+    costPerHour: "Стоимость в час",
+    combinedMetrics: "Комбинированные показатели",
+    netValue: "Чистая стоимость",
+    valuePerHour: "Доход в час",
+    tasksCompleted: "Задач выполнено",
+    expenseTrend: "Динамика расходов",
+    activityTrend: "Тренд активности",
   },
   en: {
     // Pomodoro time tracking
@@ -1099,6 +1112,19 @@ export const translations = {
     trendsChart: "Trends",
     categoryBreakdown: "By Category",
     completionTrend: "Completion Trend",
+
+    // Tag Page
+    tagNotFound: "Tag not found",
+    backToHome: "Back to home",
+    hours: "h",
+    hour: "h",
+    costPerHour: "Cost per hour",
+    combinedMetrics: "Combined metrics",
+    netValue: "Net value",
+    valuePerHour: "Value per hour",
+    tasksCompleted: "Tasks completed",
+    expenseTrend: "Expense trend",
+    activityTrend: "Activity trend",
   },
   es: {
     // Pomodoro time tracking
@@ -1647,6 +1673,19 @@ export const translations = {
     trendsChart: "Tendencias",
     categoryBreakdown: "Por Categoría",
     completionTrend: "Tendencia de Completado",
+
+    // Tag Page
+    tagNotFound: "Etiqueta no encontrada",
+    backToHome: "Volver al inicio",
+    hours: "h",
+    hour: "h",
+    costPerHour: "Costo por hora",
+    combinedMetrics: "Métricas combinadas",
+    netValue: "Valor neto",
+    valuePerHour: "Valor por hora",
+    tasksCompleted: "Tareas completadas",
+    expenseTrend: "Tendencia de gastos",
+    activityTrend: "Tendencia de actividad",
   },
 } as const;
 

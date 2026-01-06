@@ -57,30 +57,30 @@ export default function Profile() {
           subtitle={t('profileSettings')}
         />
 
-        <div className="flex flex-col items-center justify-center py-8">
+        <div className="flex flex-col items-center justify-center py-4">
           {user ? (
             <>
               <div className="relative mb-4">
-                <Avatar className="w-24 h-24">
+                <Avatar className="w-20 h-20">
                   <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
                     {(profile?.display_name || user.email)?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
                 <button
                   onClick={() => setEditDialogOpen(true)}
-                  className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
+                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
                 >
-                  <Edit2 className="w-4 h-4" />
+                  <Edit2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">
+              <h2 className="text-lg font-semibold text-foreground mb-1">
                 {profile?.display_name || user.email?.split('@')[0]}
               </h2>
-              <p className="text-sm text-muted-foreground mb-6">{user.email}</p>
+              <p className="text-xs text-muted-foreground mb-4">{user.email}</p>
               
               {isInTrial && (
-                <div className="w-full max-w-md mb-6">
+                <div className="w-full max-w-md mb-4">
                   <TrialStatusCard 
                     isInTrial={isInTrial}
                     trialDaysLeft={trialDaysLeft}
@@ -89,7 +89,7 @@ export default function Profile() {
                 </div>
               )}
               
-              <div className="w-full max-w-md mb-6">
+              <div className="w-full max-w-md mb-4">
                 <SyncHistoryPanel 
                   history={syncHistory}
                   onSync={syncAll}
@@ -97,7 +97,7 @@ export default function Profile() {
                 />
               </div>
 
-              <Button variant="outline" onClick={handleSignOut} className="gap-2">
+              <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">
                 <LogOut className="w-4 h-4" />
                 {t('signOut')}
               </Button>
