@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import Upgrade from "./pages/Upgrade";
 import Admin from "./pages/Admin";
+import TagPage from "./pages/TagPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const AppContent = () => {
         <Route path="/auth" element={<Auth />} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/tag/:tagId" element={<TagPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNavigation 
