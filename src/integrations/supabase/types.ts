@@ -221,6 +221,53 @@ export type Database = {
         }
         Relationships: []
       }
+      tag_goals: {
+        Row: {
+          budget_goal: number | null
+          created_at: string
+          id: string
+          notify_on_exceed: boolean | null
+          notify_on_milestone: boolean | null
+          period: string
+          tag_id: string
+          time_goal_minutes: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_goal?: number | null
+          created_at?: string
+          id?: string
+          notify_on_exceed?: boolean | null
+          notify_on_milestone?: boolean | null
+          period?: string
+          tag_id: string
+          time_goal_minutes?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_goal?: number | null
+          created_at?: string
+          id?: string
+          notify_on_exceed?: boolean | null
+          notify_on_milestone?: boolean | null
+          period?: string
+          tag_id?: string
+          time_goal_minutes?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tag_goals_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "user_tags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           attachments: Json | null

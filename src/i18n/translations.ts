@@ -564,6 +564,19 @@ export const translations = {
     tasksCompleted: "Задач выполнено",
     expenseTrend: "Динамика расходов",
     activityTrend: "Тренд активности",
+    
+    // Tag Goals
+    tagGoals: "Цели тега",
+    setGoals: "Установить цели",
+    budgetGoal: "Цель по бюджету",
+    timeGoal: "Цель по времени",
+    budgetUsed: "Бюджет использован",
+    timeUsed: "Время использовано",
+    goalExceeded: "Цель превышена",
+    installApp: "Установить приложение",
+    addToHomeScreen: "Добавить на рабочий стол",
+    alreadyInstalled: "Уже установлено",
+    notAvailable: "Недоступно в браузере",
   },
   en: {
     // Pomodoro time tracking
@@ -1125,6 +1138,19 @@ export const translations = {
     tasksCompleted: "Tasks completed",
     expenseTrend: "Expense trend",
     activityTrend: "Activity trend",
+    
+    // Tag Goals
+    tagGoals: "Tag Goals",
+    setGoals: "Set Goals",
+    budgetGoal: "Budget Goal",
+    timeGoal: "Time Goal",
+    budgetUsed: "Budget used",
+    timeUsed: "Time used",
+    goalExceeded: "Goal exceeded",
+    installApp: "Install App",
+    addToHomeScreen: "Add to home screen",
+    alreadyInstalled: "Already installed",
+    notAvailable: "Not available in browser",
   },
   es: {
     // Pomodoro time tracking

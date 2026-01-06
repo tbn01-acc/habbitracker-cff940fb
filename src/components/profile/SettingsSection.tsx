@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Settings, Bell, Globe, Info, FileText, Shield, Lock, ChevronRight, HelpCircle, ScrollText, Crown } from 'lucide-react';
+import { Settings, Bell, Globe, Info, FileText, Shield, Lock, ChevronRight, HelpCircle, ScrollText, Crown, Download, Smartphone } from 'lucide-react';
 import { NotificationSettings } from '@/components/NotificationSettings';
 import { LanguageSelector } from '@/components/LanguageSelector';
 import { LegalDocumentDialog } from './LegalDocumentDialog';
 import { UserPermissionsDialog } from './UserPermissionsDialog';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { useLegalDocuments } from '@/hooks/useLegalDocuments';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
 import {
   Collapsible,
   CollapsibleContent,
@@ -21,12 +23,22 @@ export function SettingsSection() {
   const { t, language } = useTranslation();
   const navigate = useNavigate();
   const { isAdmin } = useLegalDocuments();
+  const { isInstallable, isInstalled, installApp } = usePWAInstall();
   const [legalDialogOpen, setLegalDialogOpen] = useState(false);
   const [legalDocType, setLegalDocType] = useState<LegalDocumentType>('terms');
   const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(true);
 
   const isRussian = language === 'ru';
+
+  const handleInstallPWA = async () => {
+    const success = await installApp();
+    if (success) {
+      toast.success(isRussian ? 'Приложение установлено!' : 'App installed!');
+    } else {
+      toast.error(isRussian ? 'Не удалось установить приложение' : 'Failed to install app');
+    }
+  };
 
   const openLegalDoc = (type: LegalDocumentType) => {
     setLegalDocType(type);
@@ -69,6 +81,36 @@ export function SettingsSection() {
                 <NotificationSettings />
               </div>
             </CollapsibleContent>
+
+            {/* PWA Install Button */}
+            {(isInstallable || !isInstalled) && (
+              <Button
+                variant="ghost"
+                className="w-full justify-between p-4 h-auto rounded-none border-b border-border"
+                onClick={handleInstallPWA}
+                disabled={!isInstallable}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                    <Smartphone className="w-4 h-4 text-primary-foreground" />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-sm font-medium block">
+                      {isRussian ? 'Установить приложение' : 'Install App'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {isInstalled 
+                        ? (isRussian ? 'Уже установлено' : 'Already installed')
+                        : isInstallable
+                          ? (isRussian ? 'Добавить на рабочий стол' : 'Add to home screen')
+                          : (isRussian ? 'Недоступно в браузере' : 'Not available in browser')
+                      }
+                    </span>
+                  </div>
+                </div>
+                <Download className={`w-5 h-5 ${isInstallable ? 'text-primary' : 'text-muted-foreground'}`} />
+              </Button>
+            )}
           </CardContent>
         </Card>
       </Collapsible>

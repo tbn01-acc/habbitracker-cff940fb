@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Tag, Target, CheckSquare, Wallet, Clock, DollarSign, Calendar, BarChart3, TrendingUp } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, subDays, isWithinInterval } from 'date-fns';
+import { ArrowLeft, Tag, Target, CheckSquare, Wallet, Clock, DollarSign, Calendar, BarChart3, TrendingUp, Settings2 } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, subDays, isWithinInterval, startOfWeek, endOfWeek } from 'date-fns';
 import { ru, enUS, es } from 'date-fns/locale';
 import { useUserTags } from '@/hooks/useUserTags';
+import { useTagGoals } from '@/hooks/useTagGoals';
 import { useHabits, getTodayString } from '@/hooks/useHabits';
 import { useTasks } from '@/hooks/useTasks';
 import { useFinance } from '@/hooks/useFinance';
@@ -13,11 +14,13 @@ import { useTranslation } from '@/contexts/LanguageContext';
 import { AppHeader } from '@/components/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { HabitCard } from '@/components/HabitCard';
 import { TaskCard } from '@/components/TaskCard';
 import { TransactionCard } from '@/components/TransactionCard';
 import { PeriodSelector } from '@/components/PeriodSelector';
+import { TagGoalDialog } from '@/components/TagGoalDialog';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, BarChart, Bar, CartesianGrid, Legend
@@ -28,12 +31,14 @@ export default function TagPage() {
   const navigate = useNavigate();
   const { t, language } = useTranslation();
   const { tags, loading: tagsLoading } = useUserTags();
+  const { goals, getGoalForTag, upsertGoal } = useTagGoals();
   const { habits, toggleHabitCompletion } = useHabits();
   const { tasks, toggleTaskCompletion } = useTasks();
   const { transactions, toggleTransactionCompletion } = useFinance();
   const timeTracker = useTimeTracker();
   const [activeTab, setActiveTab] = useState<'overview' | 'habits' | 'tasks' | 'finance' | 'calendar'>('overview');
   const [period, setPeriod] = useState<'7' | '14' | '30'>('30');
+  const [goalDialogOpen, setGoalDialogOpen] = useState(false);
 
   const tag = tags.find(t => t.id === tagId);
   const today = getTodayString();
@@ -200,28 +205,128 @@ export default function TagPage() {
     );
   }
 
+  const isRu = language === 'ru';
+  const tagGoal = tagId ? getGoalForTag(tagId) : undefined;
+
+  // Calculate goal progress
+  const goalProgress = useMemo(() => {
+    if (!tagGoal) return null;
+    
+    const now = new Date();
+    const periodStart = tagGoal.period === 'weekly' 
+      ? startOfWeek(now, { weekStartsOn: 1 })
+      : startOfMonth(now);
+    const periodEnd = tagGoal.period === 'weekly'
+      ? endOfWeek(now, { weekStartsOn: 1 })
+      : endOfMonth(now);
+    
+    // Calculate period expense
+    const periodExpense = tagTransactions
+      .filter(t => {
+        const date = new Date(t.date);
+        return t.type === 'expense' && t.completed && date >= periodStart && date <= periodEnd;
+      })
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    // Calculate period time
+    const periodTime = tagTimeEntries
+      .filter(e => {
+        const date = new Date(e.startTime);
+        return date >= periodStart && date <= periodEnd;
+      })
+      .reduce((sum, e) => sum + e.duration, 0);
+    
+    const budgetPercent = tagGoal.budget_goal ? Math.round((periodExpense / tagGoal.budget_goal) * 100) : 0;
+    const timePercent = tagGoal.time_goal_minutes ? Math.round((periodTime / tagGoal.time_goal_minutes) * 100) : 0;
+    
+    return {
+      periodExpense,
+      periodTimeMinutes: periodTime,
+      budgetPercent: Math.min(budgetPercent, 150),
+      timePercent: Math.min(timePercent, 150),
+      budgetExceeded: tagGoal.budget_goal ? periodExpense > tagGoal.budget_goal : false,
+      timeExceeded: tagGoal.time_goal_minutes ? periodTime > tagGoal.time_goal_minutes : false,
+    };
+  }, [tagGoal, tagTransactions, tagTimeEntries]);
+
   return (
     <div className="min-h-screen bg-background pb-24">
       <AppHeader />
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div 
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{ backgroundColor: `${tag.color}20` }}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div 
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: `${tag.color}20` }}
+            >
+              <Tag className="w-5 h-5" style={{ color: tag.color }} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">{tag.name}</h1>
+              <p className="text-sm text-muted-foreground">
+                {tagHabits.length} {t('habits').toLowerCase()} • {tagTasks.length} {t('tasks').toLowerCase()} • {tagTransactions.length} {t('transactions').toLowerCase()}
+              </p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={() => setGoalDialogOpen(true)}
+            className="shrink-0"
           >
-            <Tag className="w-5 h-5" style={{ color: tag.color }} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">{tag.name}</h1>
-            <p className="text-sm text-muted-foreground">
-              {tagHabits.length} {t('habits').toLowerCase()} • {tagTasks.length} {t('tasks').toLowerCase()} • {tagTransactions.length} {t('transactions').toLowerCase()}
-            </p>
-          </div>
+            <Settings2 className="w-4 h-4" />
+          </Button>
         </div>
+
+        {/* Goals Progress */}
+        {tagGoal && goalProgress && (
+          <Card className="p-4 mb-6 border-2" style={{ borderColor: tag.color }}>
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="w-4 h-4" style={{ color: tag.color }} />
+              <span className="font-medium">{isRu ? 'Цели' : 'Goals'} ({tagGoal.period === 'weekly' ? (isRu ? 'неделя' : 'week') : (isRu ? 'месяц' : 'month')})</span>
+            </div>
+            <div className="space-y-4">
+              {tagGoal.budget_goal && (
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Wallet className="w-3 h-3" />
+                      {isRu ? 'Бюджет' : 'Budget'}
+                    </span>
+                    <span className={goalProgress.budgetExceeded ? 'text-destructive font-medium' : ''}>
+                      {goalProgress.periodExpense.toLocaleString()} / {tagGoal.budget_goal.toLocaleString()} ₽
+                    </span>
+                  </div>
+                  <Progress 
+                    value={goalProgress.budgetPercent} 
+                    className={`h-2 ${goalProgress.budgetExceeded ? '[&>div]:bg-destructive' : ''}`}
+                  />
+                </div>
+              )}
+              {tagGoal.time_goal_minutes && (
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {isRu ? 'Время' : 'Time'}
+                    </span>
+                    <span className={goalProgress.timeExceeded ? 'text-habit font-medium' : ''}>
+                      {Math.round(goalProgress.periodTimeMinutes / 60 * 10) / 10} / {Math.round(tagGoal.time_goal_minutes / 60)} {t('hours')}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={goalProgress.timePercent} 
+                    className={`h-2 ${goalProgress.timeExceeded ? '[&>div]:bg-habit' : ''}`}
+                  />
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Period Selector */}
         <div className="mb-6">
@@ -490,6 +595,17 @@ export default function TagPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Goal Dialog */}
+      {tag && (
+        <TagGoalDialog
+          open={goalDialogOpen}
+          onClose={() => setGoalDialogOpen(false)}
+          onSave={upsertGoal}
+          tag={tag}
+          existingGoal={tagGoal}
+        />
+      )}
     </div>
   );
 }

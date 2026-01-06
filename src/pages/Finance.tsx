@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Sparkles, Wallet, Settings } from 'lucide-react';
 import { useFinance } from '@/hooks/useFinance';
 import { useUsageLimits } from '@/hooks/useUsageLimits';
-import { FinanceTransaction, FINANCE_COLORS } from '@/types/finance';
+import { FinanceTransaction, FINANCE_COLORS, FINANCE_CATEGORIES } from '@/types/finance';
 import { TransactionCard } from '@/components/TransactionCard';
 import { TransactionDialog } from '@/components/TransactionDialog';
 import { PageHeader } from '@/components/PageHeader';
@@ -166,20 +166,43 @@ export default function Finance({ openDialog, onDialogClose }: FinanceProps) {
           </div>
         </div>
 
-        {/* Category/Tag Filters */}
+        {/* Category Filter with Icons */}
+        <div className="mb-4">
+          <p className="text-sm font-medium text-foreground mb-2">{t('category')}</p>
+          <div className="overflow-x-auto pb-2">
+            <div className="flex gap-2 min-w-max">
+              <button
+                onClick={() => setFilterCategory(null)}
+                className={cn(
+                  "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[60px]",
+                  !filterCategory ? "bg-finance/20 ring-2 ring-finance" : "bg-muted hover:bg-muted/80"
+                )}
+              >
+                <span className="text-lg">📋</span>
+                <span className="text-[10px] text-muted-foreground">{t('uncategorized')}</span>
+              </button>
+              {FINANCE_CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setFilterCategory(filterCategory === cat.id ? null : cat.id)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[60px]",
+                    filterCategory === cat.id ? "bg-finance/20 ring-2 ring-finance" : "bg-muted hover:bg-muted/80"
+                  )}
+                >
+                  <span className="text-lg">{cat.icon}</span>
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[50px]">{cat.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Custom Categories and Tags Filters */}
         {(categories.length > 0 || tags.length > 0) && (
           <div className="mb-4 space-y-2">
             {categories.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilterCategory(null)}
-                  className={cn(
-                    "px-3 py-1 rounded-full text-xs font-medium transition-all",
-                    !filterCategory ? "bg-finance text-white" : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {t('uncategorized')}
-                </button>
                 {categories.map(cat => (
                   <button
                     key={cat.id}

@@ -181,7 +181,7 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
               />
             </div>
 
-            {/* Category */}
+            {/* Category with Icons */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-foreground mb-2">
                 {t('category')}
@@ -270,18 +270,6 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
               </div>
             )}
 
-            {/* Save Button */}
-            <Button
-              onClick={handleSave}
-              disabled={!name.trim() || !amount}
-              className="w-full bg-finance hover:bg-finance/90 text-white"
-            >
-              {t('save')}
-            </Button>
-          </motion.div>
-        </>
-            )}
-
             {/* Common Tags (from profile) */}
             {user && (
               <div className="mb-6">
@@ -294,6 +282,18 @@ export function TransactionDialog({ open, onClose, onSave, transaction, categori
                 />
               </div>
             )}
+
+            {/* Save Button */}
+            <Button
+              onClick={handleSave}
+              disabled={!name.trim() || !amount}
+              className="w-full bg-finance hover:bg-finance/90 text-white"
+            >
+              {t('save')}
+            </Button>
+          </motion.div>
+        </>
+      )}
     </AnimatePresence>
   );
 }
