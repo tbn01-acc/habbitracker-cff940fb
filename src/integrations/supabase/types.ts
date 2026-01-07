@@ -89,6 +89,51 @@ export type Database = {
         }
         Relationships: []
       }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string | null
+          id: string
+          invoice_id: string
+          metadata: Json | null
+          paid_at: string | null
+          payment_method: string | null
+          robokassa_inv_id: number | null
+          status: string | null
+          subscription_period: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          invoice_id: string
+          metadata?: Json | null
+          paid_at?: string | null
+          payment_method?: string | null
+          robokassa_inv_id?: number | null
+          status?: string | null
+          subscription_period?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          invoice_id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          payment_method?: string | null
+          robokassa_inv_id?: number | null
+          status?: string | null
+          subscription_period?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pomodoro_sessions: {
         Row: {
           completed_at: string
@@ -220,6 +265,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      tag_goal_history: {
+        Row: {
+          actual_budget: number | null
+          actual_time_minutes: number | null
+          budget_goal: number | null
+          created_at: string | null
+          goal_achieved: boolean | null
+          id: string
+          period: string
+          period_end: string
+          period_start: string
+          tag_id: string | null
+          time_goal_minutes: number | null
+          user_id: string
+        }
+        Insert: {
+          actual_budget?: number | null
+          actual_time_minutes?: number | null
+          budget_goal?: number | null
+          created_at?: string | null
+          goal_achieved?: boolean | null
+          id?: string
+          period?: string
+          period_end: string
+          period_start: string
+          tag_id?: string | null
+          time_goal_minutes?: number | null
+          user_id: string
+        }
+        Update: {
+          actual_budget?: number | null
+          actual_time_minutes?: number | null
+          budget_goal?: number | null
+          created_at?: string | null
+          goal_achieved?: boolean | null
+          id?: string
+          period?: string
+          period_end?: string
+          period_start?: string
+          tag_id?: string | null
+          time_goal_minutes?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tag_goal_history_tag_id_fkey"
+            columns: ["tag_id"]
+            isOneToOne: false
+            referencedRelation: "user_tags"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tag_goals: {
         Row: {
