@@ -1,46 +1,77 @@
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, LogOut, LogIn, Edit2, Tags } from 'lucide-react';
-import { PageHeader } from '@/components/PageHeader';
-import { SyncHistoryPanel } from '@/components/SyncHistory';
-import { SubscriptionSection } from '@/components/profile/SubscriptionSection';
-import { ReferralSection } from '@/components/profile/ReferralSection';
-import { TrialStatusCard } from '@/components/profile/TrialStatusCard';
-import { ProfileEditDialog } from '@/components/profile/ProfileEditDialog';
-import { CommonTagsManager } from '@/components/profile/CommonTagsManager';
-import { SettingsSection } from '@/components/profile/SettingsSection';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { User, Settings, Trophy, Users, Crown, Info, Lock, LogIn, ChevronRight } from 'lucide-react';
 import { AppHeader } from '@/components/AppHeader';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
-import { useSupabaseSync } from '@/hooks/useSupabaseSync';
-import { useSubscription } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+
+interface TileProps {
+  icon: React.ReactNode;
+  title: string;
+  subtitle: string;
+  gradient: string;
+  onClick: () => void;
+  locked?: boolean;
+  delay?: number;
+}
+
+function ProfileTile({ icon, title, subtitle, gradient, onClick, locked, delay = 0 }: TileProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay }}
+      className="relative"
+    >
+      <Card 
+        className={`h-full cursor-pointer transition-all hover:scale-[1.02] hover:shadow-lg ${
+          locked ? 'opacity-60' : ''
+        }`}
+        onClick={onClick}
+      >
+        <CardContent className={`p-0 h-full rounded-xl bg-gradient-to-br ${gradient}`}>
+          <div className="p-6 h-full flex flex-col justify-between min-h-[140px]">
+            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              {icon}
+            </div>
+            <div>
+              <h3 className="font-semibold text-white text-lg">{title}</h3>
+              <p className="text-white/70 text-sm">{subtitle}</p>
+            </div>
+            {locked && (
+              <div className="absolute top-3 right-3">
+                <Lock className="w-4 h-4 text-white/50" />
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
 
 export default function Profile() {
-  const { t } = useTranslation();
+  const { language } = useTranslation();
   const navigate = useNavigate();
-  const { user, profile, signOut, loading } = useAuth();
-  const { isSyncing, syncAll, syncHistory } = useSupabaseSync();
-  const { subscription, referralStats, currentPlan, referralCode, isInTrial, trialDaysLeft, trialBonusMonths } = useSubscription();
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const isRussian = language === 'ru';
 
-  const handleSignOut = async () => {
-    await signOut();
+  const handleTileClick = (path: string, requiresAuth: boolean) => {
+    if (requiresAuth && !user) {
+      navigate('/auth');
+    } else {
+      navigate(path);
+    }
   };
-
-  const handleSignIn = () => {
-    navigate('/auth');
-  };
-
-  const handleProfileUpdate = useCallback(() => {
-    window.location.reload();
-  }, []);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background pb-24 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
+        <div className="animate-pulse text-muted-foreground">
+          {isRussian ? 'Загрузка...' : 'Loading...'}
+        </div>
       </div>
     );
   }
@@ -49,115 +80,103 @@ export default function Profile() {
     <div className="min-h-screen bg-background pb-24">
       <AppHeader />
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <PageHeader 
-          showTitle
-          icon={<User className="w-5 h-5 text-muted-foreground" />}
-          iconBgClass="bg-muted"
-          title={t('profile')}
-          subtitle={t('profileSettings')}
-        />
-
-        <div className="flex flex-col items-center justify-center py-4">
-          {user ? (
-            <>
-              <div className="relative mb-4">
-                <Avatar className="w-20 h-20">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                    {(profile?.display_name || user.email)?.[0]?.toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <button
-                  onClick={() => setEditDialogOpen(true)}
-                  className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors"
-                >
-                  <Edit2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <h2 className="text-lg font-semibold text-foreground mb-1">
-                {profile?.display_name || user.email?.split('@')[0]}
-              </h2>
-              <p className="text-xs text-muted-foreground mb-4">{user.email}</p>
-              
-              {isInTrial && (
-                <div className="w-full max-w-md mb-4">
-                  <TrialStatusCard 
-                    isInTrial={isInTrial}
-                    trialDaysLeft={trialDaysLeft}
-                    trialBonusMonths={trialBonusMonths}
-                  />
+        {/* Guest Banner */}
+        {!user && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <Card className="mb-6 border-primary/30 bg-gradient-to-r from-primary/10 to-transparent">
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                      <User className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-foreground">
+                        {isRussian ? 'Вы не авторизованы' : 'Not signed in'}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {isRussian ? 'Войдите для доступа ко всем функциям' : 'Sign in for full access'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button onClick={() => navigate('/auth')} className="gap-2">
+                    <LogIn className="w-4 h-4" />
+                    {isRussian ? 'Войти' : 'Sign In'}
+                  </Button>
                 </div>
-              )}
-              
-              <div className="w-full max-w-md mb-4">
-                <SyncHistoryPanel 
-                  history={syncHistory}
-                  onSync={syncAll}
-                  isSyncing={isSyncing}
-                />
-              </div>
-
-              <Button variant="outline" size="sm" onClick={handleSignOut} className="gap-2">
-                <LogOut className="w-4 h-4" />
-                {t('signOut')}
-              </Button>
-              
-              <ProfileEditDialog 
-                open={editDialogOpen}
-                onOpenChange={setEditDialogOpen}
-                currentDisplayName={profile?.display_name || null}
-                currentAvatarUrl={profile?.avatar_url || null}
-                userId={user.id}
-                onUpdate={handleProfileUpdate}
-              />
-            </>
-          ) : (
-            <>
-              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4">
-                <User className="w-12 h-12 text-muted-foreground" />
-              </div>
-              <h2 className="text-xl font-semibold text-foreground mb-2">{t('guest')}</h2>
-              <p className="text-sm text-muted-foreground text-center max-w-xs mb-6">
-                {t('profileDescription')}
-              </p>
-              <Button onClick={handleSignIn} className="gap-2">
-                <LogIn className="w-4 h-4" />
-                {t('signIn')}
-              </Button>
-            </>
-          )}
-        </div>
-
-        {user && (
-          <>
-            <SubscriptionSection 
-              currentPlan={currentPlan}
-              expiresAt={subscription?.expires_at}
-              bonusDays={subscription?.bonus_days}
-            />
-            <div className="mt-8">
-              <ReferralSection 
-                referralCode={referralCode}
-                currentPlan={currentPlan}
-                referralStats={referralStats}
-              />
-            </div>
-          </>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
 
-        <div className="mt-8">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Tags className="w-4 h-4 text-primary" />
-            </div>
-            <h2 className="text-lg font-semibold text-foreground">{t('commonTags')}</h2>
-          </div>
-          <CommonTagsManager />
+        {/* 2x2 Tile Grid */}
+        <div className="grid grid-cols-2 gap-4" style={{ minHeight: 'calc(100vh - 300px)' }}>
+          <ProfileTile
+            icon={<Settings className="w-6 h-6 text-white" />}
+            title={isRussian ? 'Профиль и Настройки' : 'Profile & Settings'}
+            subtitle={isRussian ? 'Аккаунт, синхронизация' : 'Account, sync'}
+            gradient="from-blue-500 to-cyan-500"
+            onClick={() => handleTileClick('/profile/settings', true)}
+            locked={!user}
+            delay={0}
+          />
+
+          <ProfileTile
+            icon={<Trophy className="w-6 h-6 text-white" />}
+            title={isRussian ? 'Награды' : 'Rewards'}
+            subtitle={isRussian ? 'Достижения и бейджи' : 'Achievements & badges'}
+            gradient="from-amber-500 to-yellow-500"
+            onClick={() => handleTileClick('/profile/achievements', true)}
+            locked={!user}
+            delay={0.1}
+          />
+
+          <ProfileTile
+            icon={<Users className="w-6 h-6 text-white" />}
+            title={isRussian ? 'Партнёрская программа' : 'Partner Program'}
+            subtitle={isRussian ? 'Приглашай и зарабатывай' : 'Invite & earn'}
+            gradient="from-purple-500 to-pink-500"
+            onClick={() => navigate('/profile/partner')}
+            delay={0.2}
+          />
+
+          <ProfileTile
+            icon={<Crown className="w-6 h-6 text-white" />}
+            title={isRussian ? 'Тарифы' : 'Pricing'}
+            subtitle={isRussian ? 'PRO подписка' : 'PRO subscription'}
+            gradient="from-amber-600 to-orange-500"
+            onClick={() => navigate('/upgrade')}
+            delay={0.3}
+          />
         </div>
 
-        <div className="mt-8">
-          <SettingsSection />
-        </div>
+        {/* About App Link */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-6"
+        >
+          <Link to="/profile/about">
+            <Button
+              variant="ghost"
+              className="w-full justify-between p-4 h-auto"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="text-sm font-medium">
+                  {isRussian ? 'О приложении' : 'About App'}
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </Link>
+        </motion.div>
       </div>
     </div>
   );

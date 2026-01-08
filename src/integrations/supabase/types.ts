@@ -197,27 +197,107 @@ export type Database = {
         }
         Relationships: []
       }
-      referrals: {
+      referral_activity_log: {
         Row: {
+          activity_date: string
           created_at: string
           id: string
-          referred_has_paid: boolean
+          time_spent_minutes: number | null
+          user_id: string
+        }
+        Insert: {
+          activity_date: string
+          created_at?: string
+          id?: string
+          time_spent_minutes?: number | null
+          user_id: string
+        }
+        Update: {
+          activity_date?: string
+          created_at?: string
+          id?: string
+          time_spent_minutes?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_earnings: {
+        Row: {
+          amount_rub: number | null
+          bonus_weeks: number | null
+          commission_percent: number | null
+          created_at: string
+          earning_type: string
+          id: string
+          payment_id: string | null
           referred_id: string
           referrer_id: string
         }
         Insert: {
+          amount_rub?: number | null
+          bonus_weeks?: number | null
+          commission_percent?: number | null
           created_at?: string
+          earning_type: string
           id?: string
-          referred_has_paid?: boolean
+          payment_id?: string | null
           referred_id: string
           referrer_id: string
         }
         Update: {
+          amount_rub?: number | null
+          bonus_weeks?: number | null
+          commission_percent?: number | null
+          created_at?: string
+          earning_type?: string
+          id?: string
+          payment_id?: string | null
+          referred_id?: string
+          referrer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_earnings_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          activated_at: string | null
+          active_days: number | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          referred_has_paid: boolean
+          referred_id: string
+          referrer_id: string
+          total_time_minutes: number | null
+        }
+        Insert: {
+          activated_at?: string | null
+          active_days?: number | null
           created_at?: string
           id?: string
+          is_active?: boolean | null
+          referred_has_paid?: boolean
+          referred_id: string
+          referrer_id: string
+          total_time_minutes?: number | null
+        }
+        Update: {
+          activated_at?: string | null
+          active_days?: number | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
           referred_has_paid?: boolean
           referred_id?: string
           referrer_id?: string
+          total_time_minutes?: number | null
         }
         Relationships: []
       }
@@ -591,6 +671,72 @@ export type Database = {
         }
         Relationships: []
       }
+      user_wallet: {
+        Row: {
+          balance_rub: number
+          bonus_weeks_earned: number
+          created_at: string
+          id: string
+          total_earned_rub: number
+          total_withdrawn_rub: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_rub?: number
+          bonus_weeks_earned?: number
+          created_at?: string
+          id?: string
+          total_earned_rub?: number
+          total_withdrawn_rub?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_rub?: number
+          bonus_weeks_earned?: number
+          created_at?: string
+          id?: string
+          total_earned_rub?: number
+          total_withdrawn_rub?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdrawal_requests: {
+        Row: {
+          amount_rub: number
+          applied_multiplier: number | null
+          created_at: string
+          id: string
+          processed_at: string | null
+          status: string
+          user_id: string
+          withdrawal_type: string
+        }
+        Insert: {
+          amount_rub: number
+          applied_multiplier?: number | null
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          user_id: string
+          withdrawal_type: string
+        }
+        Update: {
+          amount_rub?: number
+          applied_multiplier?: number | null
+          created_at?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          user_id?: string
+          withdrawal_type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -599,6 +745,10 @@ export type Database = {
       calculate_referral_bonus: {
         Args: { referrer_user_id: string }
         Returns: number
+      }
+      calculate_referral_bonus_v2: {
+        Args: { referrer_user_id: string }
+        Returns: Record<string, unknown>
       }
       has_role: {
         Args: {
