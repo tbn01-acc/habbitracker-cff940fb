@@ -13,7 +13,6 @@ import { DayQualityRing } from "@/components/dashboard/DayQualityRing";
 import { TopWidgetsSection } from "@/components/dashboard/TopWidgetsSection";
 import { OverdueWidget } from "@/components/dashboard/OverdueWidget";
 import { useOverdueNotifications } from "@/hooks/useOverdueNotifications";
-import { useAchievementNotifications } from "@/hooks/useAchievementNotifications";
 
 import { GuestModeBanner } from "@/components/GuestModeBanner";
 import { AppHeader } from "@/components/AppHeader";
@@ -32,10 +31,8 @@ export default function Dashboard() {
   const { transactions, toggleTransactionCompletion, getTodayTransactions } = useFinance();
   const { t, language } = useTranslation();
   const { profile, user } = useAuth();
-  const { userStars, recordDailyLogin } = useStars();
-  const { checkTaskMilestone, checkHabitMilestone, checkStarMilestone, checkStreakMilestone } = useAchievementNotifications();
+  const { recordDailyLogin } = useStars();
   const dailyLoginRecordedRef = useRef(false);
-  const achievementCheckedRef = useRef(false);
   
   // Initialize trial notifications
   useTrialNotifications();
@@ -50,38 +47,6 @@ export default function Dashboard() {
       recordDailyLogin();
     }
   }, [user, recordDailyLogin]);
-
-  // Check achievement milestones on load
-  useEffect(() => {
-    if (!achievementCheckedRef.current && userStars) {
-      achievementCheckedRef.current = true;
-      
-      // Check star milestones
-      if (userStars.total_stars > 0) {
-        checkStarMilestone(userStars.total_stars);
-      }
-      
-      // Check streak milestones
-      if (userStars.current_streak_days > 0) {
-        checkStreakMilestone(userStars.current_streak_days);
-      }
-    }
-  }, [userStars, checkStarMilestone, checkStreakMilestone]);
-
-  // Check task/habit milestones when completing items
-  useEffect(() => {
-    const completedTasksCount = tasks.filter(t => t.completed).length;
-    if (completedTasksCount > 0) {
-      checkTaskMilestone(completedTasksCount);
-    }
-  }, [tasks, checkTaskMilestone]);
-
-  useEffect(() => {
-    const completedHabitsCount = habits.reduce((sum, h) => sum + h.completedDates.length, 0);
-    if (completedHabitsCount > 0) {
-      checkHabitMilestone(completedHabitsCount);
-    }
-  }, [habits, checkHabitMilestone]);
 
   const today = getTodayString();
   const dayOfWeek = new Date().getDay();

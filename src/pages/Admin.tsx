@@ -65,7 +65,7 @@ interface AppStats {
 export default function Admin() {
   const { t, language } = useTranslation();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { documents, isAdmin, updateDocument, loading: docsLoading } = useLegalDocuments();
   
   const [users, setUsers] = useState<UserWithRole[]>([]);
@@ -98,22 +98,15 @@ export default function Admin() {
   const isRussian = language === 'ru';
   const [adminChecked, setAdminChecked] = useState(false);
 
-  // Wait for both auth and admin check to complete before redirecting
+  // Check if user is admin - wait for docs to load first
   useEffect(() => {
-    // Wait for auth loading to complete first
-    if (authLoading) return;
-    
-    // Wait for legal documents (admin check) to load
-    if (docsLoading) return;
-    
-    // Now we can safely check admin status
-    setAdminChecked(true);
-    
-    // Redirect non-admins to home
-    if (!isAdmin) {
-      navigate('/');
+    if (!docsLoading) {
+      setAdminChecked(true);
+      if (!isAdmin) {
+        navigate('/');
+      }
     }
-  }, [authLoading, docsLoading, isAdmin, navigate]);
+  }, [isAdmin, docsLoading, navigate]);
 
   // Fetch stats
   useEffect(() => {
@@ -284,8 +277,7 @@ export default function Admin() {
     }
   };
 
-  // Show loading while auth or docs are loading
-  if (authLoading || docsLoading || !adminChecked) {
+  if (docsLoading || !adminChecked) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse text-muted-foreground">{t('loading')}</div>
@@ -293,7 +285,6 @@ export default function Admin() {
     );
   }
 
-  // Don't render anything if not admin (redirect will happen)
   if (!isAdmin) {
     return null;
   }
