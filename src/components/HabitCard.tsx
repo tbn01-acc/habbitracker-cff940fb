@@ -7,6 +7,7 @@ import { useTranslation } from '@/contexts/LanguageContext';
 import { useUserTags } from '@/hooks/useUserTags';
 import { usePomodoro } from '@/contexts/PomodoroContext';
 import { TranslationKey } from '@/i18n/translations';
+import { triggerCompletionCelebration } from '@/utils/celebrations';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,7 +79,14 @@ export function HabitCard({ habit, onToggle, onEdit, onDelete, index, onTagClick
           {/* Completion button */}
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={(e) => { e.stopPropagation(); onToggle(today); }}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              const wasNotCompleted = !isCompletedToday;
+              onToggle(today);
+              if (wasNotCompleted) {
+                triggerCompletionCelebration();
+              }
+            }}
             className={`relative w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
               isCompletedToday 
                 ? 'text-primary-foreground' 

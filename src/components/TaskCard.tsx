@@ -14,6 +14,7 @@ import {
 import { usePomodoro } from '@/contexts/PomodoroContext';
 import { toast } from 'sonner';
 import { TaskDetailDialog } from './TaskDetailDialog';
+import { triggerCompletionCelebration } from '@/utils/celebrations';
 
 interface TaskCardProps {
   task: Task;
@@ -111,7 +112,13 @@ export function TaskCard({
         <div className="flex items-start gap-3">
           {/* Checkbox */}
           <button
-            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (!task.completed) {
+                triggerCompletionCelebration();
+              }
+              onToggle(); 
+            }}
             className={cn(
               "w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all mt-0.5",
               task.completed

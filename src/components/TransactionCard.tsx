@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TransactionDetailDialog } from './TransactionDetailDialog';
+import { triggerCompletionCelebration } from '@/utils/celebrations';
 
 interface TransactionCardProps {
   transaction: FinanceTransaction;
@@ -47,7 +48,13 @@ export function TransactionCard({ transaction, index, onToggle, onEdit, onDelete
         <div className="flex items-start gap-3">
           {/* Checkbox */}
           <button
-            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              if (!transaction.completed) {
+                triggerCompletionCelebration();
+              }
+              onToggle(); 
+            }}
             className={cn(
               "w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 transition-all mt-0.5",
               transaction.completed
