@@ -1,12 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Award, ArrowLeft, Trophy, Lock, Zap, Target, CheckCircle2, Star, TrendingUp, Crown } from 'lucide-react';
+import { Award, ArrowLeft, Trophy, Lock, Zap, Target, CheckCircle2, Star, TrendingUp, Crown, ShoppingBag } from 'lucide-react';
 import { Achievements as AchievementsComponent } from '@/components/Achievements';
+import { RewardsShopTab } from '@/components/rewards/RewardsShopTab';
 import { AppHeader } from '@/components/AppHeader';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useUserLevel } from '@/hooks/useUserLevel';
+import { useRewardsShop } from '@/hooks/useRewardsShop';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -18,6 +20,7 @@ export default function AchievementsPage() {
   const { user, loading } = useAuth();
   const { currentPlan, loading: subLoading } = useSubscription();
   const { levelInfo, loading: levelLoading, getLevelTitle, getLevelColor, XP_REWARDS } = useUserLevel();
+  const { rewards, purchasedRewards, loading: rewardsLoading, userStars, purchaseReward, useReward, getUnusedRewards } = useRewardsShop();
   const isRussian = language === 'ru';
   const isPro = currentPlan === 'pro';
 
@@ -58,10 +61,14 @@ export default function AchievementsPage() {
         </div>
 
         <Tabs defaultValue="achievements" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="achievements">
               <Award className="w-4 h-4 mr-2" />
               {isRussian ? 'Бейджи' : 'Badges'}
+            </TabsTrigger>
+            <TabsTrigger value="shop">
+              <ShoppingBag className="w-4 h-4 mr-2" />
+              {isRussian ? 'Магазин' : 'Shop'}
             </TabsTrigger>
             <TabsTrigger value="level" className="relative">
               <TrendingUp className="w-4 h-4 mr-2" />
@@ -77,6 +84,24 @@ export default function AchievementsPage() {
               animate={{ opacity: 1, y: 0 }}
             >
               <AchievementsComponent />
+            </motion.div>
+          </TabsContent>
+
+          {/* Shop Tab (moved from Rating) */}
+          <TabsContent value="shop">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <RewardsShopTab
+                rewards={rewards}
+                purchasedRewards={purchasedRewards}
+                loading={rewardsLoading}
+                userStars={userStars}
+                purchaseReward={purchaseReward}
+                useReward={useReward}
+                getUnusedRewards={getUnusedRewards}
+              />
             </motion.div>
           </TabsContent>
 
