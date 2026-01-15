@@ -232,17 +232,30 @@ export default function Rating() {
       </Dialog>
 
       {/* Edit Profile Dialog */}
-      <PublicProfileEditDialog
-        open={showProfileEditDialog}
-        onOpenChange={setShowProfileEditDialog}
-      />
+      {user && profile && (
+        <PublicProfileEditDialog
+          open={showProfileEditDialog}
+          onOpenChange={setShowProfileEditDialog}
+          userId={user.id}
+          currentData={{
+            display_name: profile.display_name,
+            avatar_url: profile.avatar_url,
+            bio: profile.bio,
+            telegram_username: profile.telegram_username,
+            public_email: profile.public_email
+          }}
+          onUpdate={() => {}}
+        />
+      )}
 
       {/* Contacts Gated Dialog */}
       {contactsProfile && (
         <ContactsGatedDialog
           open={showContactsDialog}
           onOpenChange={setShowContactsDialog}
-          profile={contactsProfile}
+          telegramUsername={contactsProfile.telegram_username}
+          email={contactsProfile.public_email}
+          displayName={contactsProfile.display_name}
         />
       )}
     </div>
