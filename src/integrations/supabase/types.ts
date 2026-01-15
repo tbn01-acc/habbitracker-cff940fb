@@ -65,6 +65,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cloud_user_settings: {
+        Row: {
+          celebration_settings: Json | null
+          dashboard_layout: Json | null
+          general_settings: Json | null
+          id: string
+          notification_settings: Json | null
+          theme_settings: Json | null
+          updated_at: string
+          user_id: string
+          widget_settings: Json | null
+        }
+        Insert: {
+          celebration_settings?: Json | null
+          dashboard_layout?: Json | null
+          general_settings?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          theme_settings?: Json | null
+          updated_at?: string
+          user_id: string
+          widget_settings?: Json | null
+        }
+        Update: {
+          celebration_settings?: Json | null
+          dashboard_layout?: Json | null
+          general_settings?: Json | null
+          id?: string
+          notification_settings?: Json | null
+          theme_settings?: Json | null
+          updated_at?: string
+          user_id?: string
+          widget_settings?: Json | null
+        }
+        Relationships: []
+      }
       daily_post_count: {
         Row: {
           created_at: string
@@ -195,6 +231,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      leaderboard_aggregates: {
+        Row: {
+          habits_completed: number
+          id: string
+          period_key: string
+          period_type: string
+          tasks_completed: number
+          total_activity_score: number
+          total_likes: number
+          total_stars: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          habits_completed?: number
+          id?: string
+          period_key: string
+          period_type: string
+          tasks_completed?: number
+          total_activity_score?: number
+          total_likes?: number
+          total_stars?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          habits_completed?: number
+          id?: string
+          period_key?: string
+          period_type?: string
+          tasks_completed?: number
+          total_activity_score?: number
+          total_likes?: number
+          total_stars?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       legal_documents: {
         Row: {
@@ -1373,7 +1448,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "moderator" | "user"
+      app_role: "admin" | "moderator" | "user" | "team"
       subscription_period:
         | "monthly"
         | "quarterly"
@@ -1509,7 +1584,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "moderator", "user"],
+      app_role: ["admin", "moderator", "user", "team"],
       subscription_period: [
         "monthly",
         "quarterly",

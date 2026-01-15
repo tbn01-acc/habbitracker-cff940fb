@@ -1,7 +1,7 @@
 import React from 'react';
-import { Star, Users } from 'lucide-react';
+import { Star, Heart, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { UserAvatarWithFrame } from '@/components/rewards/UserAvatarWithFrame';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { UserRewardItems } from '@/hooks/useUserRewardItems';
 
 interface PodiumUser {
@@ -41,12 +41,14 @@ export function RatingPodium({ users, userRewards, type, isRussian, onUserClick 
     }
   };
 
-  const getPodiumHeight = (rank: number) => {
-    switch (rank) {
-      case 1: return 'h-28';
-      case 2: return 'h-20';
-      case 3: return 'h-16';
-      default: return 'h-12';
+  const getIcon = () => {
+    switch (type) {
+      case 'likes':
+        return <Heart className="h-3 w-3 fill-pink-500 text-pink-500" />;
+      case 'referrals':
+        return <Users className="h-3 w-3 text-blue-500" />;
+      default:
+        return <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />;
     }
   };
 
@@ -59,12 +61,23 @@ export function RatingPodium({ users, userRewards, type, isRussian, onUserClick 
     }
   };
 
+  // Size for avatars: 1st place is 1.5x bigger
+  const getAvatarSize = (rank: number) => {
+    if (rank === 1) return 'w-24 h-24'; // 96px
+    return 'w-16 h-16'; // 64px
+  };
+
+  const getBadgeSize = (rank: number) => {
+    if (rank === 1) return 'w-8 h-8 text-sm';
+    return 'w-6 h-6 text-xs';
+  };
+
   if (top3.length === 0) return null;
 
   return (
     <div className="mb-6">
-      {/* Top 3 Podium */}
-      <div className="flex items-end justify-center gap-3 mb-4">
+      {/* Top 3 - Aligned to bottom */}
+      <div className="flex items-end justify-center gap-4 mb-4">
         {podiumOrder.map((user, index) => {
           if (!user) return null;
           const actualRank = user.rank;
@@ -78,39 +91,37 @@ export function RatingPodium({ users, userRewards, type, isRussian, onUserClick 
               className="flex flex-col items-center cursor-pointer"
               onClick={() => onUserClick(user.user_id)}
             >
-              {/* Avatar with frame */}
-              <div className="relative mb-2">
-                <UserAvatarWithFrame
-                  avatarUrl={user.avatar_url}
-                  displayName={user.display_name}
-                  frameId={userRewards.get(user.user_id)?.activeFrame}
-                  size={actualRank === 1 ? 'lg' : 'md'}
-                />
-                {/* Rank badge */}
-                <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${getRankBadgeColor(actualRank)}`}>
+              {/* Square Avatar with rounded corners */}
+              <div className="relative">
+                <Avatar className={`${getAvatarSize(actualRank)} rounded-xl`}>
+                  <AvatarImage 
+                    src={user.avatar_url || undefined} 
+                    alt={user.display_name}
+                    className="object-cover rounded-xl"
+                  />
+                  <AvatarFallback className="rounded-xl bg-muted text-muted-foreground text-lg">
+                    {user.display_name?.charAt(0)?.toUpperCase() || '?'}
+                  </AvatarFallback>
+                </Avatar>
+                
+                {/* Rank badge - centered at bottom edge */}
+                <div 
+                  className={`absolute left-1/2 -translate-x-1/2 -bottom-3 ${getBadgeSize(actualRank)} rounded-full flex items-center justify-center font-bold ${getRankBadgeColor(actualRank)} shadow-lg`}
+                >
                   {actualRank}
                 </div>
               </div>
 
               {/* Name */}
-              <p className="text-xs font-medium text-center max-w-[80px] truncate mb-1">
+              <p className="text-xs font-medium text-center max-w-[80px] truncate mt-4 mb-1">
                 {user.display_name}
               </p>
 
               {/* Value */}
-              <div className="flex items-center gap-1 text-sm font-semibold text-yellow-500">
-                <Star className="h-3 w-3 fill-yellow-500" />
+              <div className="flex items-center gap-1 text-sm font-semibold">
+                {getIcon()}
                 {getValue(user).toLocaleString()}
               </div>
-
-              {/* Podium base */}
-              <div className={`mt-2 w-20 ${getPodiumHeight(actualRank)} rounded-t-lg bg-gradient-to-b ${
-                actualRank === 1 
-                  ? 'from-yellow-500/30 to-yellow-500/10' 
-                  : actualRank === 2 
-                    ? 'from-gray-400/30 to-gray-400/10'
-                    : 'from-amber-600/30 to-amber-600/10'
-              }`} />
             </motion.div>
           );
         })}

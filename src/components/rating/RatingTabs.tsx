@@ -1,9 +1,8 @@
 import React from 'react';
-import { Star, ThumbsUp, Users } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export type RatingType = 'stars' | 'likes' | 'referrals';
-export type RatingPeriod = 'all' | 'year' | 'month';
+export type RatingPeriod = 'today' | 'month' | 'year' | 'all';
 
 interface RatingTabsProps {
   type: RatingType;
@@ -16,7 +15,7 @@ interface RatingTabsProps {
 export function RatingTabs({ type, onTypeChange, period, onPeriodChange, isRussian }: RatingTabsProps) {
   return (
     <div className="space-y-3">
-      {/* Type tabs - Stars/Likes/Referrals */}
+      {/* Type tabs - Stars/Referrals */}
       <Tabs value={type} onValueChange={(v) => onTypeChange(v as RatingType)}>
         <TabsList className="grid w-full grid-cols-2 h-10 bg-muted/50">
           <TabsTrigger value="stars" className="text-sm gap-2 data-[state=active]:bg-background">
@@ -28,17 +27,18 @@ export function RatingTabs({ type, onTypeChange, period, onPeriodChange, isRussi
         </TabsList>
       </Tabs>
 
-      {/* Period tabs */}
-      <div className="flex gap-2 border-b border-border">
+      {/* Period tabs - Today, Month, Year, All time */}
+      <div className="flex gap-2 border-b border-border overflow-x-auto">
         {([
-          { value: 'all', labelRu: 'За всё время', labelEn: 'All time' },
-          { value: 'year', labelRu: 'За год', labelEn: 'Per year' },
-          { value: 'month', labelRu: 'За месяц', labelEn: 'Per month' },
+          { value: 'today', labelRu: 'Сегодня', labelEn: 'Today' },
+          { value: 'month', labelRu: 'Месяц', labelEn: 'Month' },
+          { value: 'year', labelRu: 'Год', labelEn: 'Year' },
+          { value: 'all', labelRu: 'Всё время', labelEn: 'All time' },
         ] as const).map((p) => (
           <button
             key={p.value}
             onClick={() => onPeriodChange(p.value)}
-            className={`pb-2 text-sm font-medium transition-all border-b-2 ${
+            className={`pb-2 text-sm font-medium transition-all border-b-2 whitespace-nowrap ${
               period === p.value
                 ? 'border-foreground text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground'

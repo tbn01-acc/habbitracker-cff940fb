@@ -48,7 +48,7 @@ interface UserWithRole {
   id: string;
   email: string;
   display_name: string | null;
-  role: 'admin' | 'moderator' | 'user' | null;
+  role: 'admin' | 'moderator' | 'user' | 'team' | null;
   created_at: string;
 }
 
@@ -222,7 +222,7 @@ export default function Admin() {
           .from('user_roles')
           .upsert({
             user_id: selectedUser.id,
-            role: roleToAssign as 'admin' | 'moderator' | 'user',
+            role: roleToAssign as 'admin' | 'moderator' | 'user' | 'team',
           }, { onConflict: 'user_id,role' });
 
         if (error) throw error;
@@ -272,6 +272,7 @@ export default function Admin() {
     switch (role) {
       case 'admin': return 'bg-red-500/10 text-red-500 border-red-500/30';
       case 'moderator': return 'bg-blue-500/10 text-blue-500 border-blue-500/30';
+      case 'team': return 'bg-amber-500/10 text-amber-500 border-amber-500/30';
       case 'user': return 'bg-green-500/10 text-green-500 border-green-500/30';
       default: return 'bg-muted text-muted-foreground';
     }
@@ -526,6 +527,7 @@ export default function Admin() {
                               <SelectContent>
                                 <SelectItem value="admin">Admin</SelectItem>
                                 <SelectItem value="moderator">Moderator</SelectItem>
+                                <SelectItem value="team">Team (PRO)</SelectItem>
                                 <SelectItem value="user">User</SelectItem>
                                 <SelectItem value="remove" className="text-destructive">
                                   {isRussian ? 'Удалить роль' : 'Remove role'}
